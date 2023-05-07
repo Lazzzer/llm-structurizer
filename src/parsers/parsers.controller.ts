@@ -1,15 +1,28 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiSecurity,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { ParsersListDto } from './dto/parsers-list.dto';
 
 @ApiSecurity('apiKey')
 @ApiTags('parsers')
+@ApiUnauthorizedResponse({
+  description: 'API key is invalid or missing',
+})
 @Controller({
   path: 'parsers',
   version: '1',
 })
 export class ParsersController {
+  @ApiOkResponse({
+    description: 'List of available parsers',
+    type: ParsersListDto,
+  })
   @Get()
-  getHello(): string {
-    return 'Hello World from ParsersController!';
+  getParsersList(): ParsersListDto {
+    return { availableParsers: ['pdf'] };
   }
 }
