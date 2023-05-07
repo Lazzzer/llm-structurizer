@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Poppler } from 'node-poppler';
 
 @Injectable()
 export class PdfParserService {
+  constructor(private configService: ConfigService) {}
   async parsePdf(file: Buffer) {
-    const poppler = new Poppler(process.env.POPPLER_BIN_PATH);
-
+    const poppler = new Poppler(this.configService.get('POPPLER_BIN_PATH'));
     let text = await poppler.pdfToText(file, null, {
       maintainLayout: true,
       quiet: true,
