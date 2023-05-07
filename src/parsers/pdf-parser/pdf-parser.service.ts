@@ -18,25 +18,17 @@ export class PdfParserService {
 
     return text;
   }
-
   private postProcessText(text: string) {
-    // trim each line
-    const lines = text.split('\n').map((line) => line.trim());
+    const processedText = text
+      .split('\n')
+      // trim each line
+      .map((line) => line.trim())
+      // keep only one line if multiple lines are empty
+      .filter((line, index, arr) => line !== '' || arr[index - 1] !== '')
+      // remove whitespace in lines if there are more than 3 spaces
+      .map((line) => line.replace(/\s{3,}/g, '   '))
+      .join('\n');
 
-    // keep only one line if multiple lines are empty
-    const lines2 = lines.filter((line, index) => {
-      if (line === '') {
-        return lines[index - 1] !== '';
-      }
-      return true;
-    });
-
-    // remove whitespace in lines if there are more than 3 spaces
-    const lines3 = lines2.map((line) => {
-      return line.replace(/\s{3,}/g, '   ');
-    });
-
-    const postProcessedText = lines3.join('\n');
-    return postProcessedText;
+    return processedText;
   }
 }
