@@ -11,7 +11,10 @@ export class ApiKeyStrategy extends PassportStrategy(
     super(
       { header: 'X-API-KEY', prefix: '' },
       true,
-      async (apiKey: string, done) => {
+      async (
+        apiKey: string,
+        done: (err: Error | unknown, verified?: boolean) => void,
+      ) => {
         const isValidApiKey = await this.authService.validateApiKey(apiKey);
         return isValidApiKey
           ? done(null, true)
