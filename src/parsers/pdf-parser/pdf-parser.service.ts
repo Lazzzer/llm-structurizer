@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Poppler } from 'node-poppler';
 
 @Injectable()
 export class PdfParserService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private httpService: HttpService,
+  ) {}
+
   async parsePdf(file: Buffer) {
     const poppler = new Poppler(this.configService.get('POPPLER_BIN_PATH'));
     let text = await poppler.pdfToText(file, null, {
@@ -18,6 +23,25 @@ export class PdfParserService {
 
     return text;
   }
+
+  async loadPdfFromUrl(url: string) {
+    const response = await this.httpService.axiosRef({
+      url,
+      method: 'GET',
+      responseType: 'arraybuffer',
+    });
+
+    if (response.headers['content-type'] !== 'application/pdf') {
+      throw new BadRequestException('The provided URL is not a PDF.');
+    }
+
+    if (response.headers['content-length'] > 5 * 1024 * 1024) {
+      throw new BadRequestException('The PDF file is larger than 5 MB.');
+    }
+
+    return Buffer.from(response.data, 'binary');
+  }
+
   private postProcessText(text: string) {
     const processedText = text
       .split('\n')
