@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PdfParserService } from './pdf-parser.service';
 import { ConfigModule } from '@nestjs/config';
-import { HttpModule, HttpService } from '@nestjs/axios';
+import { HttpModule } from '@nestjs/axios';
 
 describe('PdfParserService', () => {
   let service: PdfParserService;
@@ -824,6 +824,35 @@ describe('PdfParserService', () => {
       const expected = 'test';
       const actual = await service.parsePdf(buffer);
       expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('loadPdfFromUrl()', () => {
+    it('should load the pdf from the url and parse it', async () => {
+      const url =
+        'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+      const buffer = await service.loadPdfFromUrl(url);
+
+      const expected = 'Dummy PDF file';
+      const actual = await service.parsePdf(buffer);
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('should throw an error if the file extension is not .pdf', async () => {
+      const url =
+        'https://pub-e0c49d057f644ddd8865f82361396859.r2.dev/cute-cat.jpg';
+      await expect(service.loadPdfFromUrl(url)).rejects.toThrowError(
+        'The file extension is not .pdf',
+      );
+    });
+
+    it('should throw an error if the file does not have the pdf magic number', async () => {
+      const url =
+        'https://pub-e0c49d057f644ddd8865f82361396859.r2.dev/cute-cat.jpg.pdf';
+      await expect(service.loadPdfFromUrl(url)).rejects.toThrowError(
+        'The file is not a valid PDF.',
+      );
     });
   });
 

@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AxiosResponse } from 'axios';
 import { Poppler } from 'node-poppler';
 
 @Injectable()
@@ -25,19 +26,18 @@ export class PdfParserService {
   }
 
   async loadPdfFromUrl(url: string) {
+    const extension = url.split('.').pop();
+    if (extension !== 'pdf') {
+      throw new BadRequestException('The file extension is not .pdf');
+    }
+
     const response = await this.httpService.axiosRef({
       url,
       method: 'GET',
       responseType: 'arraybuffer',
     });
 
-    if (response.headers['content-type'] !== 'application/pdf') {
-      throw new BadRequestException('The provided URL is not a PDF.');
-    }
-
-    if (response.headers['content-length'] > 5 * 1024 * 1024) {
-      throw new BadRequestException('The PDF file is larger than 5 MB.');
-    }
+    this.checkResponse(response);
 
     return Buffer.from(response.data, 'binary');
   }
@@ -54,5 +54,22 @@ export class PdfParserService {
       .join('\n');
 
     return processedText;
+  }
+
+  private checkResponse(response: AxiosResponse) {
+    if (response.headers['content-length'] > 5 * 1024 * 1024) {
+      throw new BadRequestException('The PDF file is larger than 5 MB.');
+    }
+
+    if (!this.isPdfBuffer(response.data)) {
+      throw new BadRequestException('The file is not a valid PDF.');
+    }
+  }
+
+  private isPdfBuffer(buffer: Buffer) {
+    const pdfMagicNumber = Buffer.from([0x25, 0x50, 0x44, 0x46]); // '%PDF' in hexadecimal
+    const bufferStart = buffer.subarray(0, 4);
+
+    return bufferStart.equals(pdfMagicNumber);
   }
 }
