@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PdfParserService } from './pdf-parser.service';
 import { ConfigModule } from '@nestjs/config';
+import { HttpModule, HttpService } from '@nestjs/axios';
 
 describe('PdfParserService', () => {
   let service: PdfParserService;
@@ -8,7 +9,7 @@ describe('PdfParserService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [PdfParserService],
-      imports: [ConfigModule.forRoot()],
+      imports: [ConfigModule.forRoot(), HttpModule],
     }).compile();
 
     service = module.get<PdfParserService>(PdfParserService);
