@@ -21,6 +21,11 @@ async function bootstrap() {
   // OpenAPI (Swagger) configuration
   const config = new DocumentBuilder()
     .setTitle('LLM-Structurizer API')
+    .setContact(
+      'Lazar Pavicevic',
+      'https://github.com/Lazzzer',
+      'lazar.pavicevic@heig-vd.ch',
+    )
     .setDescription(
       'LLM-Structurizer is an API that allows you to structure your data in a way that is easy to use and understand with the power of Large Language Models.',
     )

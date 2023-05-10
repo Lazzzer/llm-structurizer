@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  HttpCode,
   ParseFilePipeBuilder,
   Post,
   UnprocessableEntityException,
@@ -9,7 +10,17 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import { PdfParserService } from './pdf-parser.service';
 import {
   PdfParserUploadResultDto,
@@ -39,6 +50,15 @@ const pdfPipe = new ParseFilePipeBuilder()
     fileIsRequired: true,
   });
 
+@ApiUnauthorizedResponse({
+  description: "The API key in request's header is missing or invalid.",
+})
+@ApiBadRequestResponse({
+  description: 'The request body or the uploaded file is invalid or missing.',
+})
+@ApiUnprocessableEntityResponse({
+  description: 'The PDF file is not searchable.',
+})
 @ApiSecurity('apiKey')
 @ApiTags('parsers')
 @Controller({
@@ -48,10 +68,22 @@ const pdfPipe = new ParseFilePipeBuilder()
 export class PdfParserController {
   constructor(private readonly pdfParserService: PdfParserService) {}
 
+  @ApiOperation({
+    summary: 'Return text from uploaded PDF file',
+    description: `This endpoint retrieves the content of an uploaded PDF file and returns it as text.\n   
+    The file must be a searchable PDF, with a maximum size of 5MB.  
+    Its buffer needs to start with its magic number "%PDF-" to be parsed.`,
+  })
+  @ApiOkResponse({
+    type: PdfParserUploadResultDto,
+    description:
+      'The PDF was parsed and post-processed successfully. Its content is returned as text.',
+  })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: uploadSchema })
+  @ApiBody({ schema: uploadSchema, description: 'PDF file to be parsed' })
   @UseInterceptors(FileInterceptor('file'))
-  @Post()
+  @Post('upload')
+  @HttpCode(200)
   async parsePdfFromUpload(
     @UploadedFile(pdfPipe) file: Express.Multer.File,
   ): Promise<PdfParserUploadResultDto> {
@@ -66,6 +98,22 @@ export class PdfParserController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Return text from PDF file provided by URL',
+    description: `This endpoint retrieves the content of a PDF file available through an URL and returns it as text.\n
+    The file must be a searchable PDF, with a maximum size of 5MB.  
+    Its buffer needs to start with its magic number "%PDF-" to be parsed.`,
+  })
+  @ApiOkResponse({
+    type: PdfParserUrlResultDto,
+    description:
+      'The PDF was parsed and post-processed successfully. Its content is returned as text.',
+  })
+  @ApiBody({
+    type: PdfParserRequestDto,
+    description: 'URL of the PDF file to be parsed',
+  })
+  @HttpCode(200)
   @Post('url')
   async parsePdfFromUrl(
     @Body() requestDto: PdfParserRequestDto,
