@@ -12,7 +12,7 @@ export class PdfSizeError extends Error {
 
 export class PdfMagicNumberError extends Error {
   constructor() {
-    super('The file does not start with the PDF magic number: %PDF-');
+    super('The file does not start with the PDF magic number: %PDF');
   }
 }
 

@@ -67,8 +67,8 @@ export class PdfParserService {
       throw new PdfSizeError();
     }
 
-    const pdfMagicNumber = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]); // '%PDF-' in hexadecimal
-    const bufferStart = response.data.subarray(0, 5);
+    const pdfMagicNumber = Buffer.from([0x25, 0x50, 0x44, 0x46]); // '%PDF' in hexadecimal
+    const bufferStart = response.data.subarray(0, 4);
 
     if (!bufferStart.equals(pdfMagicNumber)) {
       throw new PdfMagicNumberError();

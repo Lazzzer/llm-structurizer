@@ -2,18 +2,24 @@ import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsUrl } from 'class-validator';
 
 class UploadResultDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Original file name of the uploaded file',
+  })
   originalFileName: string;
 }
 
 class UrlResultDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Original URL of the PDF file',
+  })
   @IsUrl()
   originalUrl: string;
 }
 
 export class PdfParserResultDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Parsed and post-processed content of the PDF file',
+  })
   content: string;
 }
 
