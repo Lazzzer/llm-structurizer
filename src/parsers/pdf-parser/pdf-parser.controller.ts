@@ -72,7 +72,7 @@ export class PdfParserController {
     summary: 'Return text from uploaded PDF file',
     description: `This endpoint retrieves the content of an uploaded PDF file and returns it as text.\n   
     The file must be a searchable PDF, with a maximum size of 5MB.  
-    Its buffer needs to start with its magic number "%PDF-" to be parsed.`,
+    Its buffer needs to start with its magic number "%PDF" to be parsed.`,
   })
   @ApiOkResponse({
     type: PdfParserUploadResultDto,
@@ -102,7 +102,7 @@ export class PdfParserController {
     summary: 'Return text from PDF file provided by URL',
     description: `This endpoint retrieves the content of a PDF file available through an URL and returns it as text.\n
     The file must be a searchable PDF, with a maximum size of 5MB.  
-    Its buffer needs to start with its magic number "%PDF-" to be parsed.`,
+    Its buffer needs to start with its magic number "%PDF" to be parsed.`,
   })
   @ApiOkResponse({
     type: PdfParserUrlResultDto,
