@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { StructuringService } from './structuring.service';
+import { LLMService } from './llm/llm.service';
 
 @Module({})
 export class StructuredDataModule {
-  providers: [StructuringService];
+  providers: [LLMService];
 }
