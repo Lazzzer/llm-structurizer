@@ -6,6 +6,10 @@ import { BaseLanguageModel } from 'langchain/dist/base_language';
 import { ChainValues } from 'langchain/dist/schema';
 import { LLMChain, loadQARefineChain } from 'langchain/chains';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import {
+  LLMNotAvailableError,
+  PromptTemplateFormatError,
+} from './exceptions/exceptions';
 
 @Injectable()
 export class LLMService {
@@ -39,9 +43,7 @@ export class LLMService {
     promptTemplate: PromptTemplate,
     chainValues: ChainValues,
   ) {
-    if (!this.availableModels.has(model)) {
-      throw new Error(`Model ${model} is not available.`);
-    }
+    await this.checkInputs(model, [promptTemplate], chainValues);
 
     const llmChain = new LLMChain({
       llm: this.availableModels.get(model),
@@ -59,9 +61,11 @@ export class LLMService {
     refinePromptTemplate: PromptTemplate,
     chainValues: ChainValues,
   ) {
-    if (!this.availableModels.has(model)) {
-      throw new Error(`Model ${model} is not available.`); // TODO: throw a custom error
-    }
+    await this.checkInputs(
+      model,
+      [initialPromptTemplate, refinePromptTemplate],
+      chainValues,
+    );
 
     const refineChain = loadQARefineChain(this.availableModels.get(model), {
       questionPrompt: initialPromptTemplate,
@@ -73,13 +77,35 @@ export class LLMService {
     return output;
   }
 
-  private async splitDocument(document: string) {
+  private async splitDocument(
+    document: string,
+    chunkSize = 2000,
+    chunkOverlap = 200,
+  ) {
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 2000,
-      chunkOverlap: 200,
+      chunkSize,
+      chunkOverlap,
     });
 
     const output = await splitter.createDocuments([document]);
     return output;
+  }
+
+  private async checkInputs(
+    model: string,
+    promptTemplates: PromptTemplate[],
+    chainValues: ChainValues,
+  ) {
+    if (!this.availableModels.has(model)) {
+      throw new LLMNotAvailableError(model);
+    }
+
+    try {
+      for (const promptTemplate of promptTemplates) {
+        await promptTemplate.format(chainValues);
+      }
+    } catch (e) {
+      throw new PromptTemplateFormatError();
+    }
   }
 }
