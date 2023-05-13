@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsJSON } from 'class-validator';
+import { IsEnum, IsJSON, IsNotEmpty, IsNotEmptyObject } from 'class-validator';
 
 enum Model {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
@@ -10,6 +10,7 @@ export class JsonExtractRequestDto {
   @ApiProperty({
     description: 'text to extract structured data from',
   })
+  @IsNotEmpty()
   text: string;
 
   @ApiProperty({
@@ -23,6 +24,7 @@ export class JsonExtractRequestDto {
     description: 'json schema to use as model for data extraction',
   })
   @IsJSON()
+  @IsNotEmptyObject()
   jsonSchema: string;
 
   @ApiPropertyOptional({
