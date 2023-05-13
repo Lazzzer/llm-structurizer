@@ -9,7 +9,10 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import {
   LLMNotAvailableError,
   PromptTemplateFormatError,
+  RefinePromptsInputVariablesError,
+  RefineReservedChainValuesError,
 } from './exceptions/exceptions';
+import { Document } from 'langchain/document';
 
 @Injectable()
 export class LLMService {
@@ -43,12 +46,19 @@ export class LLMService {
     promptTemplate: PromptTemplate,
     chainValues: ChainValues,
   ) {
-    await this.checkInputs(model, [promptTemplate], chainValues);
+    if (!this.availableModels.has(model)) {
+      throw new LLMNotAvailableError(model);
+    }
+
+    try {
+      await promptTemplate.format(chainValues);
+    } catch (e) {
+      throw new PromptTemplateFormatError();
+    }
 
     const llmChain = new LLMChain({
       llm: this.availableModels.get(model),
       prompt: promptTemplate,
-      verbose: true,
     });
 
     const output = await llmChain.call(chainValues);
@@ -59,29 +69,43 @@ export class LLMService {
     model: string,
     initialPromptTemplate: PromptTemplate,
     refinePromptTemplate: PromptTemplate,
-    chainValues: ChainValues,
+    chainValues: ChainValues & { input_documents: Document[] },
   ) {
-    await this.checkInputs(
-      model,
-      [initialPromptTemplate, refinePromptTemplate],
-      chainValues,
+    if (!this.availableModels.has(model)) {
+      throw new LLMNotAvailableError(model);
+    }
+
+    if (chainValues['context'] || chainValues['existing_answer']) {
+      throw new RefineReservedChainValuesError('context or existing_answer');
+    }
+
+    this.throwErrorIfInputVariableMissing(
+      'initialPromptTemplate',
+      'context',
+      initialPromptTemplate.inputVariables,
+    );
+    this.throwErrorIfInputVariableMissing(
+      'refinePromptTemplate',
+      'context',
+      refinePromptTemplate.inputVariables,
+    );
+
+    this.throwErrorIfInputVariableMissing(
+      'refinePromptTemplate',
+      'existing_answer',
+      refinePromptTemplate.inputVariables,
     );
 
     const refineChain = loadQARefineChain(this.availableModels.get(model), {
       questionPrompt: initialPromptTemplate,
       refinePrompt: refinePromptTemplate,
-      verbose: true,
     });
 
     const output = await refineChain.call(chainValues);
     return output;
   }
 
-  private async splitDocument(
-    document: string,
-    chunkSize = 2000,
-    chunkOverlap = 200,
-  ) {
+  async splitDocument(document: string, chunkSize = 2000, chunkOverlap = 200) {
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize,
       chunkOverlap,
@@ -91,21 +115,13 @@ export class LLMService {
     return output;
   }
 
-  private async checkInputs(
-    model: string,
-    promptTemplates: PromptTemplate[],
-    chainValues: ChainValues,
+  private throwErrorIfInputVariableMissing(
+    templateName: string,
+    variableName: string,
+    inputVariables: string[],
   ) {
-    if (!this.availableModels.has(model)) {
-      throw new LLMNotAvailableError(model);
-    }
-
-    try {
-      for (const promptTemplate of promptTemplates) {
-        await promptTemplate.format(chainValues);
-      }
-    } catch (e) {
-      throw new PromptTemplateFormatError();
+    if (!inputVariables.includes(variableName)) {
+      throw new RefinePromptsInputVariablesError(templateName, variableName);
     }
   }
 }
