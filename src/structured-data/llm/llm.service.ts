@@ -46,9 +46,10 @@ export class LLMService {
     const llmChain = new LLMChain({
       llm: this.availableModels.get(model),
       prompt: promptTemplate,
+      verbose: true,
     });
 
-    const output = await llmChain.predict(chainValues);
+    const output = await llmChain.call(chainValues);
     return output;
   }
 
@@ -59,7 +60,7 @@ export class LLMService {
     chainValues: ChainValues,
   ) {
     if (!this.availableModels.has(model)) {
-      throw new Error(`Model ${model} is not available.`);
+      throw new Error(`Model ${model} is not available.`); // TODO: throw a custom error
     }
 
     const refineChain = loadQARefineChain(this.availableModels.get(model), {
@@ -68,7 +69,7 @@ export class LLMService {
       verbose: true,
     });
 
-    const output = await refineChain.run(chainValues);
+    const output = await refineChain.call(chainValues);
     return output;
   }
 
