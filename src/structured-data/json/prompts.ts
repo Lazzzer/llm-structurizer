@@ -62,6 +62,31 @@ Input:
 Output:
 `;
 
+const jsonAnalysisTemplate = `
+You are a highly efficient text processing application.
+
+Given the original unstructured text, the JSON schema, and the generated JSON output, analyze and identify any discrepancies, errors, or inconsistencies. 
+Specifically, pinpoint the parts in the original text that may have led to incorrect output in the generated JSON. 
+Please provide a list of fields in the generated JSON that need to be corrected, and the corresponding suggestions for corrections.
+If you think the generated JSON is correct, please do not provide any suggestions.
+---------------------
+JSON schema:
+{jsonSchema}
+---------------------
+Original text:
+{originalText}
+---------------------
+Generated JSON output:
+{jsonOutput}
+---------------------
+
+Please output your analysis in the following json format:
+
+{outputFormat}
+
+Your analysis:
+`;
+
 // ##### Prompt Templates #####
 
 export const jsonZeroShotSchemaExtraction = new PromptTemplate({
@@ -77,4 +102,9 @@ export const jsonZeroShotSchemaExtractionRefine = new PromptTemplate({
 export const jsonOneShotExtraction = new PromptTemplate({
   inputVariables: ['exampleInput', 'exampleOutput', 'context'],
   template: jsonOneShotExtractionTemplate,
+});
+
+export const jsonAnalysis = new PromptTemplate({
+  inputVariables: ['jsonSchema', 'originalText', 'jsonOutput', 'outputFormat'],
+  template: jsonAnalysisTemplate,
 });
