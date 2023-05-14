@@ -17,7 +17,7 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { JsonExtractRequestDto } from './dto/jsonExtractRequest.dto';
+import { JsonExtractSchemaRequestDto } from './dto/jsonExtractRequest.dto';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 
@@ -53,13 +53,13 @@ export class JsonController {
       'The text was successfully structured as json. The output is a valid json object.',
   })
   @ApiBody({
-    type: JsonExtractRequestDto,
+    type: JsonExtractSchemaRequestDto,
     description:
       'Request body containing text to process as json and extraction parameters',
   })
   @HttpCode(200)
   @Post('schema')
-  async extractSchema(@Body() request: JsonExtractRequestDto) {
+  async extractSchema(@Body() request: JsonExtractSchemaRequestDto) {
     const { text, model, jsonSchema, refine } = request;
     const extractionMethod = refine
       ? 'extractWithSchemaAndRefine'
