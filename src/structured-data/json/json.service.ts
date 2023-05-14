@@ -7,7 +7,7 @@ import {
   jsonZeroShotSchemaExtractionRefine,
 } from './prompts';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
-import type { Analysis } from './type/types';
+import { Analysis } from './dto/jsonAnalyzeResult.dto';
 
 @Injectable()
 export class JsonService {
@@ -69,21 +69,8 @@ export class JsonService {
       },
     );
     try {
-      const json: Analysis = JSON.parse(output.text);
-      if (
-        Array.isArray(json.corrections) &&
-        json.corrections.every(
-          (correction) =>
-            typeof correction.field === 'string' &&
-            typeof correction.issue === 'string' &&
-            typeof correction.description === 'string' &&
-            typeof correction.suggestion === 'string',
-        )
-      ) {
-        return json;
-      } else {
-        throw new InvalidJsonOutputError();
-      }
+      const json = JSON.parse(output.text);
+      return json;
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
@@ -114,8 +101,21 @@ export class JsonService {
       outputFormat: JSON.stringify(outputFormat),
     });
     try {
-      const json: object = JSON.parse(output.text);
-      return json;
+      const json: Analysis = JSON.parse(output.text);
+      if (
+        Array.isArray(json.corrections) &&
+        json.corrections.every(
+          (correction) =>
+            typeof correction.field === 'string' &&
+            typeof correction.issue === 'string' &&
+            typeof correction.description === 'string' &&
+            typeof correction.suggestion === 'string',
+        )
+      ) {
+        return json;
+      } else {
+        throw new InvalidJsonOutputError();
+      }
     } catch (e) {
       throw new InvalidJsonOutputError();
     }

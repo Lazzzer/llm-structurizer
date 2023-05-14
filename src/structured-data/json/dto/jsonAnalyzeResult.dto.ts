@@ -1,4 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsObject } from 'class-validator';
+
+export class Analysis {
+  @ApiProperty({
+    description: 'list of corrections',
+  })
+  @IsArray()
+  corrections: Correction[];
+}
+
+export class Correction {
+  @ApiProperty({
+    description: 'field that needs to be corrected',
+  })
+  field: string;
+  @ApiProperty({
+    description: 'issue found in the field',
+  })
+  issue: string;
+  @ApiProperty({
+    description: 'description of the issue, reasons for why it is an issue',
+  })
+  description: string;
+  @ApiProperty({
+    description: 'suggestion for how to correct the issue',
+  })
+  suggestion: string;
+}
 
 export class JsonAnalyzeResultDto {
   @ApiProperty({
@@ -9,5 +37,6 @@ export class JsonAnalyzeResultDto {
   @ApiProperty({
     description: 'analysis of the generated json',
   })
-  analysis: string;
+  @IsObject()
+  analysis: Analysis;
 }

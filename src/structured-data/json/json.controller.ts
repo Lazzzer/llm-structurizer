@@ -24,7 +24,7 @@ import {
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 import { JsonAnalyzeRequestDto } from './dto/jsonAnalyzeRequest.dto';
-import { JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
+import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
 
 @ApiUnauthorizedResponse({
   description: "The API key in request's header is missing or invalid.",
@@ -155,7 +155,7 @@ export class JsonController {
   async analyzeJsonOutput(@Body() request: JsonAnalyzeRequestDto) {
     const { model, jsonSchema, originalText, jsonOutput } = request;
     try {
-      const json = await this.jsonService.analyzeJsonOutput(
+      const analysis: Analysis = await this.jsonService.analyzeJsonOutput(
         model,
         jsonOutput,
         originalText,
@@ -163,7 +163,7 @@ export class JsonController {
       );
       const response: JsonAnalyzeResultDto = {
         model,
-        analysis: JSON.stringify(json),
+        analysis,
       };
       return response;
     } catch (e) {
