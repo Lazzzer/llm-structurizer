@@ -17,7 +17,10 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { JsonExtractSchemaRequestDto } from './dto/jsonExtractRequest.dto';
+import {
+  JsonExtractExampleRequestDto,
+  JsonExtractSchemaRequestDto,
+} from './dto/jsonExtractRequest.dto';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 
@@ -73,6 +76,49 @@ export class JsonController {
       const response: JsonExtractResultDto = {
         model,
         refine: refine || false,
+        output: JSON.stringify(json),
+      };
+      return response;
+    } catch (e) {
+      if (e instanceof InvalidJsonOutputError) {
+        throw new UnprocessableEntityException(e.message);
+      }
+      throw new InternalServerErrorException(e.message);
+    }
+  }
+
+  @ApiOperation({
+    summary:
+      'Return structured data from text as json using an example of input and output',
+    description: `This endpoint returns structured data from input text as json.  
+    It accepts a fully featured example with a given input text and a desired output json which will be used for data extraction.
+    If chunking is needed, the zero-shot variant with a schema is better suited for the task.\n
+
+    Available model: gpt-3.5-turbo
+    `,
+  })
+  @ApiOkResponse({
+    type: JsonExtractResultDto,
+    description:
+      'The text was successfully structured as json. The output is a valid json object.',
+  })
+  @ApiBody({
+    type: JsonExtractExampleRequestDto,
+    description:
+      'Request body containing text to process as json and extraction parameters',
+  })
+  @HttpCode(200)
+  @Post('example')
+  async extractExample(@Body() request: JsonExtractExampleRequestDto) {
+    const { text, model, exampleInput, exampleOutput } = request;
+    try {
+      const json = await this.jsonService.extractWithExample(text, model, {
+        input: exampleInput,
+        output: exampleOutput,
+      });
+      const response: JsonExtractResultDto = {
+        model,
+        refine: false,
         output: JSON.stringify(json),
       };
       return response;

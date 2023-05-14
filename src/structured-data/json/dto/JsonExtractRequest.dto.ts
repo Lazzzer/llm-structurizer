@@ -38,7 +38,26 @@ class SchemaRequestDto {
   jsonSchema: string;
 }
 
+class ExampleRequestDto {
+  @ApiProperty({
+    description: 'example input text',
+  })
+  @IsNotEmpty()
+  exampleInput: string;
+
+  @ApiProperty({
+    description: 'example output json',
+  })
+  @IsJSON()
+  exampleOutput: string;
+}
+
 export class JsonExtractSchemaRequestDto extends IntersectionType(
   JsonExtractRequestDto,
   SchemaRequestDto,
+) {}
+
+export class JsonExtractExampleRequestDto extends IntersectionType(
+  JsonExtractRequestDto,
+  ExampleRequestDto,
 ) {}

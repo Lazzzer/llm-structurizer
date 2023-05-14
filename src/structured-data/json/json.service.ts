@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { LLMService } from '../llm/llm.service';
 import {
+  jsonOneShotExtraction,
   jsonZeroShotSchemaExtraction,
   jsonZeroShotSchemaExtractionRefine,
 } from './prompts';
@@ -45,6 +46,28 @@ export class JsonService {
 
     try {
       const json: object = JSON.parse(output.output_text);
+      return json;
+    } catch (e) {
+      throw new InvalidJsonOutputError();
+    }
+  }
+
+  async extractWithExample(
+    text: string,
+    model: string,
+    example: { input: string; output: string },
+  ) {
+    const output = await this.llmService.generateOutput(
+      model,
+      jsonOneShotExtraction,
+      {
+        context: text,
+        exampleInput: example.input,
+        exampleOutput: example.output,
+      },
+    );
+    try {
+      const json: object = JSON.parse(output.text);
       return json;
     } catch (e) {
       throw new InvalidJsonOutputError();
