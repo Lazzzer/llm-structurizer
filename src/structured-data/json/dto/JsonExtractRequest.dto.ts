@@ -5,7 +5,7 @@ import {
 } from '@nestjs/swagger';
 import { IsEnum, IsJSON, IsNotEmpty } from 'class-validator';
 
-enum Model {
+export enum Model {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
 }
 
