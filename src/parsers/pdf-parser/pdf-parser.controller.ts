@@ -25,8 +25,8 @@ import { PdfParserService } from './pdf-parser.service';
 import {
   PdfParserUploadResultDto,
   PdfParserUrlResultDto,
-} from './dto/pdf-parser-result.dto';
-import { PdfParserRequestDto } from './dto/pdf-parser-request.dto';
+} from './dto/pdfParserResult.dto';
+import { PdfParserRequestDto } from './dto/pdfParserRequest.dto';
 import { PdfNotParsedError } from './exceptions/exceptions';
 
 const uploadSchema = {
