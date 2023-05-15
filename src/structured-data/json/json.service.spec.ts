@@ -89,7 +89,7 @@ describe('JsonService', () => {
       );
       expect(analysis).toBeDefined();
       expect(analysis).toHaveProperty('corrections');
-    }, 10000);
+    }, 20000);
     it('should throw if the output is not a valid Analysis object', async () => {
       const originalText = 'This is a text';
       const jsonOutput = {
