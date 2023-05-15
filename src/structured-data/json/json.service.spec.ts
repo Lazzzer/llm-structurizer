@@ -72,4 +72,43 @@ describe('JsonService', () => {
       ).rejects.toThrow(InvalidJsonOutputError);
     });
   });
+  describe('analyzeJsonOutput()', () => {
+    it('should return an Analysis object', async () => {
+      const originalText = 'This is a text';
+      const jsonOutput = {
+        title: 'This is a title',
+        description: 'This is a text',
+      };
+      const schema = '{"title": "string", "description": "string"}';
+      const model = 'gpt-3.5-turbo';
+      const analysis = await service.analyzeJsonOutput(
+        model,
+        JSON.stringify(jsonOutput),
+        originalText,
+        schema,
+      );
+      expect(analysis).toBeDefined();
+      expect(analysis).toHaveProperty('corrections');
+    }, 20000);
+    it('should throw if the output is not a valid Analysis object', async () => {
+      const originalText = 'This is a text';
+      const jsonOutput = {
+        title: 'This is a title',
+        description: 'This is a text',
+      };
+      const schema = '{"title": "string", "description": "string"}';
+      const model = 'gpt-3.5-turbo';
+      jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
+        text: '{}',
+      });
+      await expect(
+        service.analyzeJsonOutput(
+          model,
+          JSON.stringify(jsonOutput),
+          originalText,
+          schema,
+        ),
+      ).rejects.toThrow(InvalidJsonOutputError);
+    });
+  });
 });

@@ -23,6 +23,8 @@ import {
 } from './dto/jsonExtractRequest.dto';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
+import { JsonAnalyzeRequestDto } from './dto/jsonAnalyzeRequest.dto';
+import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
 
 @ApiUnauthorizedResponse({
   description: "The API key in request's header is missing or invalid.",
@@ -120,6 +122,48 @@ export class JsonController {
         model,
         refine: false,
         output: JSON.stringify(json),
+      };
+      return response;
+    } catch (e) {
+      if (e instanceof InvalidJsonOutputError) {
+        throw new UnprocessableEntityException(e.message);
+      }
+      throw new InternalServerErrorException(e.message);
+    }
+  }
+
+  @ApiOperation({
+    summary:
+      'Return an analysis of potential errors from a generated json output',
+    description: `This endpoint returns an analysis of a generated json output by comparing it to the original text and its json schema.  
+    It accepts the json output to analyze, the original text and the json schema used for data extraction.\n
+
+    Available model: gpt-4
+    `,
+  })
+  @ApiOkResponse({
+    type: JsonAnalyzeResultDto,
+    description: 'The analysis is successfully returned.',
+  })
+  @ApiBody({
+    type: JsonAnalyzeRequestDto,
+    description:
+      'Request body containing the json schema, the original text and the json output to analyze',
+  })
+  @HttpCode(200)
+  @Post('analysis')
+  async analyzeJsonOutput(@Body() request: JsonAnalyzeRequestDto) {
+    const { model, jsonSchema, originalText, jsonOutput } = request;
+    try {
+      const analysis: Analysis = await this.jsonService.analyzeJsonOutput(
+        model,
+        jsonOutput,
+        originalText,
+        jsonSchema,
+      );
+      const response: JsonAnalyzeResultDto = {
+        model,
+        analysis,
       };
       return response;
     } catch (e) {

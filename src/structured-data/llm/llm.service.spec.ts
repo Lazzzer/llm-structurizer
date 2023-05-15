@@ -112,7 +112,7 @@ describe('LLMService', () => {
 
       expect(output).toBeDefined();
       expect(output['output_text']).toContain('llm-structurizer');
-    });
+    }, 20000);
 
     it('should throw if the model given is not available', async () => {
       const model = 'gpt-42';
