@@ -15,8 +15,8 @@ import configuration from './config/configuration';
       load: [configuration],
     }),
     ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 20,
+      ttl: 30,
+      limit: 200,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
