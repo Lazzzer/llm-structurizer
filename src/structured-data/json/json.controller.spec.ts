@@ -3,7 +3,10 @@ import { JsonController } from './json.controller';
 import { JsonService } from './json.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LLMService } from '../llm/llm.service';
-import { UnprocessableEntityException } from '@nestjs/common';
+import {
+  BadRequestException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 
 describe('JsonController', () => {
@@ -64,5 +67,36 @@ describe('JsonController', () => {
         jsonSchema: schema,
       }),
     ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('should throw a BadRequestException if the given api key is missing', async () => {
+    const text = 'This is a text';
+    const model = {
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    await expect(
+      controller.extractSchema({
+        text,
+        model,
+        jsonSchema: schema,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw a BadRequestException if the given api key is invalid', async () => {
+    const text = 'This is a text';
+    const model = {
+      name: 'gpt-3.5-turbo',
+      apiKey: 'invalid',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    await expect(
+      controller.extractSchema({
+        text,
+        model,
+        jsonSchema: schema,
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 });

@@ -3,6 +3,8 @@ import { LLMService } from './llm.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PromptTemplate } from 'langchain/prompts';
 import {
+  LLMApiKeyInvalidError,
+  LLMApiKeyMissingError,
   LLMNotAvailableError,
   PromptTemplateFormatError,
 } from './exceptions/exceptions';
@@ -57,6 +59,39 @@ describe('LLMService', () => {
           product: 'cars',
         }),
       ).rejects.toThrow(LLMNotAvailableError);
+    });
+
+    it('should throw if the given model needs a missing api key', async () => {
+      const model = {
+        name: 'gpt-3.5-turbo',
+      };
+      const promptTemplate = new PromptTemplate({
+        template: 'What is a good name for a company that makes {product}?',
+        inputVariables: ['product'],
+      });
+
+      await expect(
+        service.generateOutput(model, promptTemplate, {
+          product: 'cars',
+        }),
+      ).rejects.toThrow(LLMApiKeyMissingError);
+    });
+
+    it('should throw if the given api key is invalid', async () => {
+      const model = {
+        apiKey: 'invalid',
+        name: 'gpt-3.5-turbo',
+      };
+      const promptTemplate = new PromptTemplate({
+        template: 'What is a good name for a company that makes {product}?',
+        inputVariables: ['product'],
+      });
+
+      await expect(
+        service.generateOutput(model, promptTemplate, {
+          product: 'cars',
+        }),
+      ).rejects.toThrow(LLMApiKeyInvalidError);
     });
 
     it('should throw if the chain values do not match the input variables of the prompt template', async () => {
