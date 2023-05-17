@@ -103,7 +103,7 @@ describe('PdfParserController', () => {
     );
   });
 
-  it('should throw a BadRequestException for a file with .pdf not having its magic number', async () => {
+  it('should throw a BadRequestException for a fake .pdf file', async () => {
     const url =
       'https://pub-e0c49d057f644ddd8865f82361396859.r2.dev/cute-cat.jpg.pdf';
     await expect(controller.parsePdfFromUrl({ url: url })).rejects.toThrow(
