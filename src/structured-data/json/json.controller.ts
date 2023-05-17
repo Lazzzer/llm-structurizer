@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -25,6 +26,10 @@ import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 import { JsonAnalyzeRequestDto } from './dto/jsonAnalyzeRequest.dto';
 import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
+import {
+  LLMApiKeyInvalidError,
+  LLMApiKeyMissingError,
+} from '../llm/exceptions/exceptions';
 
 @ApiUnauthorizedResponse({
   description: "The API key in request's header is missing or invalid.",
@@ -84,6 +89,12 @@ export class JsonController {
     } catch (e) {
       if (e instanceof InvalidJsonOutputError) {
         throw new UnprocessableEntityException(e.message);
+      }
+      if (
+        e instanceof LLMApiKeyMissingError ||
+        e instanceof LLMApiKeyInvalidError
+      ) {
+        throw new BadRequestException(e.message);
       }
       throw new InternalServerErrorException(e.message);
     }

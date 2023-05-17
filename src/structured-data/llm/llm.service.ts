@@ -6,6 +6,8 @@ import { ChainValues } from 'langchain/dist/schema';
 import { LLMChain, loadQARefineChain } from 'langchain/chains';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import {
+  LLMApiKeyInvalidError,
+  LLMApiKeyMissingError,
   LLMNotAvailableError,
   PromptTemplateFormatError,
   RefinePromptsInputVariablesError,
@@ -34,8 +36,15 @@ export class LLMService {
       prompt: promptTemplate,
     });
 
-    const output = await llmChain.call(chainValues);
-    return output;
+    try {
+      const output = await llmChain.call(chainValues);
+      return output;
+    } catch (e) {
+      if (e?.response?.status && e?.response?.status === 401) {
+        throw new LLMApiKeyInvalidError(model.name);
+      }
+      throw e;
+    }
   }
 
   async generateRefineOutput(
@@ -72,8 +81,15 @@ export class LLMService {
       refinePrompt: refinePromptTemplate,
     });
 
-    const output = await refineChain.call(chainValues);
-    return output;
+    try {
+      const output = await refineChain.call(chainValues);
+      return output;
+    } catch (e) {
+      if (e?.response?.status && e?.response?.status === 401) {
+        throw new LLMApiKeyInvalidError(model.name);
+      }
+      throw e;
+    }
   }
 
   async splitDocument(document: string, chunkSize = 2000, chunkOverlap = 200) {
@@ -99,23 +115,29 @@ export class LLMService {
   private retrieveAvailableModel(model: Model): BaseLanguageModel {
     switch (model.name) {
       case 'gpt-3.5-turbo': {
+        if (!model.apiKey) {
+          throw new LLMApiKeyMissingError(model.name);
+        }
         const llm = new ChatOpenAI({
           cache: true,
           maxConcurrency: 10,
           maxRetries: 3,
           modelName: 'gpt-3.5-turbo',
-          openAIApiKey: model.apiKey ?? '',
+          openAIApiKey: model.apiKey,
           temperature: 0,
         });
         return llm;
       }
       case 'gpt-4': {
+        if (!model.apiKey) {
+          throw new LLMApiKeyMissingError(model.name);
+        }
         const llm = new ChatOpenAI({
           cache: true,
           maxConcurrency: 10,
           maxRetries: 3,
           modelName: 'gpt-4',
-          openAIApiKey: model.apiKey ?? '',
+          openAIApiKey: model.apiKey,
           temperature: 0,
         });
         return llm;

@@ -4,6 +4,18 @@ export class LLMNotAvailableError extends Error {
   }
 }
 
+export class LLMApiKeyMissingError extends Error {
+  constructor(model = '') {
+    super(`API key for model ${model} is missing.`);
+  }
+}
+
+export class LLMApiKeyInvalidError extends Error {
+  constructor(model = '') {
+    super(`API key for model ${model} is invalid.`);
+  }
+}
+
 export class PromptTemplateFormatError extends Error {
   constructor() {
     super(`Prompt template could not be formatted with provided chain values.`);
