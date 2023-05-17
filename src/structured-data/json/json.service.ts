@@ -91,7 +91,7 @@ export class JsonService {
           field: 'the field in the generated JSON that needs to be corrected',
           issue: 'the issue you identified',
           description:
-            'your description of the issue, give your reasoning for why it is an issue',
+            'your description of the issue, give your full reasoning for why it is an issue',
           suggestion: 'your suggestion for correction',
         },
       ],

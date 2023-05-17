@@ -8,6 +8,7 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import {
   LLMApiKeyInvalidError,
   LLMApiKeyMissingError,
+  LLMBadRequestReceivedError,
   LLMNotAvailableError,
   PromptTemplateFormatError,
   RefinePromptsInputVariablesError,
@@ -42,6 +43,9 @@ export class LLMService {
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
         throw new LLMApiKeyInvalidError(model.name);
+      }
+      if (e?.response?.status && e?.response?.status === 400) {
+        throw new LLMBadRequestReceivedError(model.name);
       }
       throw e;
     }
@@ -87,6 +91,9 @@ export class LLMService {
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
         throw new LLMApiKeyInvalidError(model.name);
+      }
+      if (e?.response?.status && e?.response?.status === 400) {
+        throw new LLMBadRequestReceivedError(model.name);
       }
       throw e;
     }

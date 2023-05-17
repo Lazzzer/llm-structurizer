@@ -16,6 +16,14 @@ export class LLMApiKeyInvalidError extends Error {
   }
 }
 
+export class LLMBadRequestReceivedError extends Error {
+  constructor(model = '') {
+    super(
+      `Bad request received for model ${model}, the input may be too long for the context window of the model.`,
+    );
+  }
+}
+
 export class PromptTemplateFormatError extends Error {
   constructor() {
     super(`Prompt template could not be formatted with provided chain values.`);

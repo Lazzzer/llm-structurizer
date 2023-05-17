@@ -29,6 +29,7 @@ import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
 import {
   LLMApiKeyInvalidError,
   LLMApiKeyMissingError,
+  LLMBadRequestReceivedError,
 } from '../llm/exceptions/exceptions';
 
 @ApiUnauthorizedResponse({
@@ -94,7 +95,10 @@ export class JsonController {
       };
       return response;
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
+      if (
+        e instanceof InvalidJsonOutputError ||
+        e instanceof LLMBadRequestReceivedError
+      ) {
         throw new UnprocessableEntityException(e.message);
       }
       if (
