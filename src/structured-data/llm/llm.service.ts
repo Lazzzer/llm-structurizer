@@ -96,7 +96,6 @@ export class LLMService {
     document: string,
     params?: { chunkSize: number; overlap: number },
   ) {
-    console.log(params.chunkSize, params.overlap);
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: params?.chunkSize ?? 2000,
       chunkOverlap: params?.overlap ?? 100,

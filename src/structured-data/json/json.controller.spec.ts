@@ -50,6 +50,44 @@ describe('JsonController', () => {
     });
     expect(() => JSON.parse(json.output)).not.toThrow();
   });
+
+  it("should call extractWitSchemaAndRefine() if the 'refine' parameter is set to true", async () => {
+    const text = 'This is a text';
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    const spy = jest.spyOn(service, 'extractWithSchemaAndRefine');
+    await controller.extractSchema({
+      text,
+      model,
+      jsonSchema: schema,
+      refine: true,
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it("should call extractWitSchemaAndRefine() if the 'refine' parameter is a correct RefineParams object", async () => {
+    const text = 'This is a text';
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    const spy = jest.spyOn(service, 'extractWithSchemaAndRefine');
+    await controller.extractSchema({
+      text,
+      model,
+      jsonSchema: schema,
+      refine: {
+        chunkSize: 100,
+        overlap: 0,
+      },
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
   it('should throw a UnprocessableEntityException if the output is not a valid json', async () => {
     const text = 'This is a text';
     const model = {
