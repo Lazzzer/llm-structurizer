@@ -3,19 +3,30 @@ import {
   ApiPropertyOptional,
   IntersectionType,
 } from '@nestjs/swagger';
-import { IsEnum, IsJSON, IsNotEmpty } from 'class-validator';
-
-export enum Model {
-  GPT_3_5_TURBO = 'gpt-3.5-turbo',
-}
+import { IsJSON, IsNotEmpty, IsObject } from 'class-validator';
 
 class JsonExtractRequestDto {
   @ApiProperty({
-    enum: Model,
-    description: 'model available for data extraction',
+    description: 'model to use for data extraction',
+    type: 'object',
+    properties: {
+      apiKey: {
+        type: 'string',
+        description: 'api key of the model',
+        nullable: true,
+      },
+      name: {
+        type: 'string',
+        description: 'name of the model',
+        default: 'gpt-4',
+      },
+    },
   })
-  @IsEnum(Model)
-  model: Model;
+  @IsObject()
+  model: {
+    apiKey?: string;
+    name: string;
+  };
 
   @ApiProperty({
     description: 'text to extract structured data from',

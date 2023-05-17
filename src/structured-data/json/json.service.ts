@@ -8,12 +8,13 @@ import {
 } from './prompts';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { Analysis } from './dto/jsonAnalyzeResult.dto';
+import { Model } from '../llm/types/types';
 
 @Injectable()
 export class JsonService {
   constructor(private llmService: LLMService) {}
 
-  async extractWithSchema(text: string, model: string, schema: string) {
+  async extractWithSchema(model: Model, text: string, schema: string) {
     const output = await this.llmService.generateOutput(
       model,
       jsonZeroShotSchemaExtraction,
@@ -30,11 +31,7 @@ export class JsonService {
     }
   }
 
-  async extractWithSchemaAndRefine(
-    text: string,
-    model: string,
-    schema: string,
-  ) {
+  async extractWithSchemaAndRefine(model: Model, text: string, schema: string) {
     const documents = await this.llmService.splitDocument(text);
     const output = await this.llmService.generateRefineOutput(
       model,
@@ -55,8 +52,8 @@ export class JsonService {
   }
 
   async extractWithExample(
+    model: Model,
     text: string,
-    model: string,
     example: { input: string; output: string },
   ) {
     const output = await this.llmService.generateOutput(
@@ -77,7 +74,7 @@ export class JsonService {
   }
 
   async analyzeJsonOutput(
-    model: string,
+    model: Model,
     jsonOutput: string,
     originalText: string,
     schema: string,

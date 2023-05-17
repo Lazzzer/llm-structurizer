@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LLMService } from './llm.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PromptTemplate } from 'langchain/prompts';
 import {
   LLMNotAvailableError,
@@ -9,6 +9,7 @@ import {
 
 describe('LLMService', () => {
   let service: LLMService;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,6 +18,7 @@ describe('LLMService', () => {
     }).compile();
 
     service = module.get<LLMService>(LLMService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -25,7 +27,10 @@ describe('LLMService', () => {
 
   describe('generateOutput()', () => {
     it('should generate an output', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const promptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -38,7 +43,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if the given model is not available', async () => {
-      const model = 'gpt-42';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-42',
+      };
       const promptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -52,7 +60,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if the chain values do not match the input variables of the prompt template', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const promptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -67,7 +78,10 @@ describe('LLMService', () => {
   });
   describe('generateRefineOutput()', () => {
     it('should generate the correct output from a chunked document', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const text = `
         This is the first sentence of the testing text.\n
         This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
@@ -115,7 +129,10 @@ describe('LLMService', () => {
     }, 20000);
 
     it('should throw if the model given is not available', async () => {
-      const model = 'gpt-42';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-42',
+      };
       const dummyPrompt = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -129,7 +146,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if there are reserved input variables in chainValues', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const dummyPrompt = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -146,7 +166,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if the initial prompt template does not have the context input variable', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const initialPromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -167,7 +190,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if the refine prompt template does not have the context input variable', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const initialPromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {context}?',
         inputVariables: ['context'],
@@ -193,7 +219,10 @@ describe('LLMService', () => {
     });
 
     it('should throw if the refine prompt template does not have the existing_answer input variable', async () => {
-      const model = 'gpt-3.5-turbo';
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
       const initialPromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {context}?',
         inputVariables: ['context'],
