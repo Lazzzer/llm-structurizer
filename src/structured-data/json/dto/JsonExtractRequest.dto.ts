@@ -3,7 +3,38 @@ import {
   ApiPropertyOptional,
   IntersectionType,
 } from '@nestjs/swagger';
-import { IsJSON, IsNotEmpty, IsObject } from 'class-validator';
+import {
+  IsJSON,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
+import { RefineParams } from '../types/types';
+
+@ValidatorConstraint({ name: 'boolean-or-refineParams', async: false })
+class IsBooleanOrRefineParams implements ValidatorConstraintInterface {
+  validate(text: any) {
+    if (typeof text === 'boolean') {
+      return true;
+    }
+    if (typeof text === 'object') {
+      return (
+        typeof text.chunkSize === 'number' &&
+        typeof text.overlap === 'number' &&
+        text.chunkSize > 0 &&
+        text.overlap >= 0 &&
+        text.chunkSize > text.overlap
+      );
+    }
+  }
+
+  defaultMessage() {
+    return 'refine can be undefined, a boolean or an object with chunkSize > 0 and overlap >= 0';
+  }
+}
 
 class JsonExtractRequestDto {
   @ApiProperty({
@@ -37,10 +68,33 @@ class JsonExtractRequestDto {
 
 class SchemaRequestDto {
   @ApiPropertyOptional({
-    description: 'whether to use refine multi-step extraction',
-    default: false,
+    oneOf: [
+      {
+        description: 'whether to use refine multi-step extraction',
+        type: 'boolean',
+        default: false,
+      },
+      {
+        description: 'parameters for refine multi-step extraction',
+        type: 'object',
+        properties: {
+          chunkSize: {
+            type: 'number',
+            description: 'size of chunks to split the document into',
+            default: 2000,
+          },
+          overlap: {
+            type: 'number',
+            description: 'overlap between chunks',
+            default: 100,
+          },
+        },
+      },
+    ],
   })
-  refine?: boolean;
+  @Validate(IsBooleanOrRefineParams)
+  @IsOptional()
+  refine?: boolean | RefineParams;
 
   @ApiProperty({
     description: 'json schema to use as model for data extraction',

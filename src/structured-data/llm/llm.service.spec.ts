@@ -121,7 +121,10 @@ describe('LLMService', () => {
         This is the first sentence of the testing text.\n
         This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
         `;
-      const documents = await service.splitDocument(text, 100, 0);
+      const documents = await service.splitDocument(text, {
+        chunkSize: 100,
+        overlap: 0,
+      });
       const initialPromptTemplate = new PromptTemplate({
         template: `Given the following text, please write the value to output.
         ---------------------

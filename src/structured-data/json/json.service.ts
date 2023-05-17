@@ -9,6 +9,7 @@ import {
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { Analysis } from './dto/jsonAnalyzeResult.dto';
 import { Model } from '../llm/types/types';
+import { RefineParams } from './types/types';
 
 @Injectable()
 export class JsonService {
@@ -31,8 +32,13 @@ export class JsonService {
     }
   }
 
-  async extractWithSchemaAndRefine(model: Model, text: string, schema: string) {
-    const documents = await this.llmService.splitDocument(text);
+  async extractWithSchemaAndRefine(
+    model: Model,
+    text: string,
+    schema: string,
+    refineParams?: RefineParams,
+  ) {
+    const documents = await this.llmService.splitDocument(text, refineParams);
     const output = await this.llmService.generateRefineOutput(
       model,
       jsonZeroShotSchemaExtraction,

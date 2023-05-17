@@ -71,18 +71,25 @@ export class JsonController {
   @Post('schema')
   async extractSchema(@Body() request: JsonExtractSchemaRequestDto) {
     const { text, model, jsonSchema, refine } = request;
-    const extractionMethod = refine
-      ? 'extractWithSchemaAndRefine'
-      : 'extractWithSchema';
     try {
-      const json = await this.jsonService[extractionMethod](
-        model,
-        text,
-        jsonSchema,
-      );
+      let json;
+      if (refine) {
+        json = await this.jsonService.extractWithSchemaAndRefine(
+          model,
+          text,
+          jsonSchema,
+          typeof refine === 'object' ? refine : undefined,
+        );
+      } else {
+        json = await this.jsonService.extractWithSchema(
+          model,
+          text,
+          jsonSchema,
+        );
+      }
       const response: JsonExtractResultDto = {
         model: model.name,
-        refine: refine || false,
+        refine: !!refine || false,
         output: JSON.stringify(json),
       };
       return response;

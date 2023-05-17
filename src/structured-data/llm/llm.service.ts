@@ -92,10 +92,14 @@ export class LLMService {
     }
   }
 
-  async splitDocument(document: string, chunkSize = 2000, chunkOverlap = 200) {
+  async splitDocument(
+    document: string,
+    params?: { chunkSize: number; overlap: number },
+  ) {
+    console.log(params.chunkSize, params.overlap);
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize,
-      chunkOverlap,
+      chunkSize: params?.chunkSize ?? 2000,
+      chunkOverlap: params?.overlap ?? 100,
     });
 
     const output = await splitter.createDocuments([document]);
