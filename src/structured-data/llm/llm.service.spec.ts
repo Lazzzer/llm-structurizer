@@ -42,7 +42,7 @@ describe('LLMService', () => {
         product: 'cars',
       });
       expect(output).toBeDefined();
-    });
+    }, 10000);
 
     it('should throw if the given model is not available', async () => {
       const model = {
@@ -153,7 +153,7 @@ describe('LLMService', () => {
         inputVariables: ['existing_answer', 'context'],
       });
 
-      const output = await service.generateRefineOutput(
+      const { output, llmCallCount } = await service.generateRefineOutput(
         model,
         initialPromptTemplate,
         refinePromptTemplate,
@@ -164,6 +164,7 @@ describe('LLMService', () => {
 
       expect(output).toBeDefined();
       expect(output['output_text']).toContain('llm-structurizer');
+      expect(llmCallCount).toBe(2);
     }, 20000);
 
     it('should throw if the model given is not available', async () => {

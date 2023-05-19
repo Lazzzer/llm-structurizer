@@ -13,6 +13,11 @@ import { RefineParams } from './types/types';
 
 @Injectable()
 export class JsonService {
+  private defaultRefineParams: RefineParams = {
+    chunkSize: 2000,
+    overlap: 100,
+  };
+
   constructor(private llmService: LLMService) {}
 
   async extractWithSchema(model: Model, text: string, schema: string) {
@@ -38,8 +43,9 @@ export class JsonService {
     schema: string,
     refineParams?: RefineParams,
   ) {
-    const documents = await this.llmService.splitDocument(text, refineParams);
-    const output = await this.llmService.generateRefineOutput(
+    const params = refineParams || this.defaultRefineParams;
+    const documents = await this.llmService.splitDocument(text, params);
+    const { output, llmCallCount } = await this.llmService.generateRefineOutput(
       model,
       jsonZeroShotSchemaExtraction,
       jsonZeroShotSchemaExtractionRefine,
@@ -48,10 +54,9 @@ export class JsonService {
         jsonSchema: schema,
       },
     );
-
     try {
       const json: object = JSON.parse(output.output_text);
-      return json;
+      return { json, refineRecap: { ...params, llmCallCount } };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }

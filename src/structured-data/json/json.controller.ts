@@ -73,27 +73,33 @@ export class JsonController {
   async extractSchema(@Body() request: JsonExtractSchemaRequestDto) {
     const { text, model, jsonSchema, refine } = request;
     try {
-      let json;
       if (refine) {
-        json = await this.jsonService.extractWithSchemaAndRefine(
-          model,
-          text,
-          jsonSchema,
-          typeof refine === 'object' ? refine : undefined,
-        );
+        const { json, refineRecap } =
+          await this.jsonService.extractWithSchemaAndRefine(
+            model,
+            text,
+            jsonSchema,
+            typeof refine === 'object' ? refine : undefined,
+          );
+        const response: JsonExtractResultDto = {
+          model: model.name,
+          refine: refineRecap,
+          output: JSON.stringify(json),
+        };
+        return response;
       } else {
-        json = await this.jsonService.extractWithSchema(
+        const json = await this.jsonService.extractWithSchema(
           model,
           text,
           jsonSchema,
         );
+        const response: JsonExtractResultDto = {
+          model: model.name,
+          refine: false,
+          output: JSON.stringify(json),
+        };
+        return response;
       }
-      const response: JsonExtractResultDto = {
-        model: model.name,
-        refine: !!refine || false,
-        output: JSON.stringify(json),
-      };
-      return response;
     } catch (e) {
       if (
         e instanceof InvalidJsonOutputError ||

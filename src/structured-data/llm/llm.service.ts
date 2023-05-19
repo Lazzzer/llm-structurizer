@@ -16,6 +16,7 @@ import {
 } from './exceptions/exceptions';
 import { Document } from 'langchain/document';
 import { Model } from './types/types';
+import { RefineCallbackHandler } from './callbackHandlers/refineHandler';
 
 @Injectable()
 export class LLMService {
@@ -68,6 +69,7 @@ export class LLMService {
       'context',
       initialPromptTemplate.inputVariables,
     );
+
     this.throwErrorIfInputVariableMissing(
       'refinePromptTemplate',
       'context',
@@ -86,8 +88,9 @@ export class LLMService {
     });
 
     try {
-      const output = await refineChain.call(chainValues);
-      return output;
+      const handler = new RefineCallbackHandler();
+      const output = await refineChain.call(chainValues, [handler]);
+      return { output, llmCallCount: handler.llmCallCount };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
         throw new LLMApiKeyInvalidError(model.name);
@@ -101,11 +104,11 @@ export class LLMService {
 
   async splitDocument(
     document: string,
-    params?: { chunkSize: number; overlap: number },
+    params: { chunkSize: number; overlap: number },
   ) {
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: params?.chunkSize ?? 2000,
-      chunkOverlap: params?.overlap ?? 100,
+      chunkSize: params.chunkSize,
+      chunkOverlap: params.overlap,
     });
 
     const output = await splitter.createDocuments([document]);
