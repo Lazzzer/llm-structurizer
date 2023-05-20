@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsString,
 } from 'class-validator';
 
 export class JsonAnalyzeRequestDto {
@@ -20,7 +21,6 @@ export class JsonAnalyzeRequestDto {
       name: {
         type: 'string',
         description: 'name of the model',
-        default: 'gpt-4',
       },
     },
   })
@@ -33,6 +33,7 @@ export class JsonAnalyzeRequestDto {
   @ApiProperty({
     description: 'original text from which the json was generated',
   })
+  @IsString()
   @IsNotEmpty()
   originalText: string;
 
@@ -49,7 +50,7 @@ export class JsonAnalyzeRequestDto {
   jsonSchema: string;
 
   @ApiPropertyOptional({
-    description: 'add a debug report',
+    description: 'if a debug report of the analysis should be generated',
     default: false,
     required: false,
   })

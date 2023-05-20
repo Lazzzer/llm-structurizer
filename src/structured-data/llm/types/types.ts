@@ -3,14 +3,14 @@ export type Model = {
   apiKey?: string;
 };
 
-export interface DebugReport {
+export type DebugReport = {
   chainCallCount: number;
   llmCallCount: number;
   chains: ChainCall[];
   llms: LlmCall[];
-}
+};
 
-export interface ChainCall {
+export type ChainCall = {
   chainName: string;
   runId: string;
   start: {
@@ -22,9 +22,9 @@ export interface ChainCall {
   error: {
     err: any;
   };
-}
+};
 
-export interface LlmCall {
+export type LlmCall = {
   llmName: string;
   parentRunId?: string;
   runId: string;
@@ -37,4 +37,4 @@ export interface LlmCall {
   error: {
     err: any;
   };
-}
+};

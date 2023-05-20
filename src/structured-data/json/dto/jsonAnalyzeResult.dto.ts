@@ -42,7 +42,7 @@ export class JsonAnalyzeResultDto {
   analysis: Analysis;
 
   @ApiPropertyOptional({
-    description: 'debug report of the extraction',
+    description: 'debug report of the analysis',
   })
   @IsObject()
   @IsOptional()

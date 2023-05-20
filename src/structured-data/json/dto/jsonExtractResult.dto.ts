@@ -70,7 +70,7 @@ export class JsonExtractResultDto {
   output: string;
 
   @ApiPropertyOptional({
-    description: 'debug report of the extraction',
+    description: 'debug report of the json extraction',
   })
   @IsObject()
   @IsOptional()

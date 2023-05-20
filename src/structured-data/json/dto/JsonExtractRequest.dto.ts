@@ -50,7 +50,6 @@ class JsonExtractRequestDto {
       name: {
         type: 'string',
         description: 'name of the model',
-        default: 'gpt-4',
       },
     },
   })
@@ -67,7 +66,7 @@ class JsonExtractRequestDto {
   text: string;
 
   @ApiPropertyOptional({
-    description: 'add a debug report',
+    description: 'if a debug report of the json extraction should be generated',
     default: false,
     required: false,
   })
@@ -77,10 +76,16 @@ class JsonExtractRequestDto {
 }
 
 class SchemaRequestDto {
+  @ApiProperty({
+    description: 'json schema to use as model for data extraction',
+  })
+  @IsJSON()
+  jsonSchema: string;
+
   @ApiPropertyOptional({
     oneOf: [
       {
-        description: 'whether to use refine multi-step extraction',
+        description: 'if refine multi-step extraction should be used',
         type: 'boolean',
         default: false,
       },
@@ -105,12 +110,6 @@ class SchemaRequestDto {
   @Validate(IsBooleanOrRefineParams)
   @IsOptional()
   refine?: boolean | RefineParams;
-
-  @ApiProperty({
-    description: 'json schema to use as model for data extraction',
-  })
-  @IsJSON()
-  jsonSchema: string;
 }
 
 class ExampleRequestDto {
@@ -121,7 +120,7 @@ class ExampleRequestDto {
   exampleInput: string;
 
   @ApiProperty({
-    description: 'example output json',
+    description: 'example of desired json output',
   })
   @IsJSON()
   exampleOutput: string;
