@@ -38,10 +38,41 @@ describe('LLMService', () => {
         inputVariables: ['product'],
       });
 
-      const output = await service.generateOutput(model, promptTemplate, {
-        product: 'cars',
-      });
+      const { output, debugReport } = await service.generateOutput(
+        model,
+        promptTemplate,
+        {
+          product: 'cars',
+        },
+      );
       expect(output).toBeDefined();
+      expect(debugReport).toBeNull();
+    }, 10000);
+
+    it('should generate an output with a debug report', async () => {
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
+      const promptTemplate = new PromptTemplate({
+        template: 'What is a good name for a company that makes {product}?',
+        inputVariables: ['product'],
+      });
+
+      const { output, debugReport } = await service.generateOutput(
+        model,
+        promptTemplate,
+        {
+          product: 'cars',
+        },
+        true,
+      );
+      expect(output).toBeDefined();
+      expect(debugReport).toBeDefined();
+      expect(debugReport).toHaveProperty('chainCallCount');
+      expect(debugReport).toHaveProperty('llmCallCount');
+      expect(debugReport).toHaveProperty('chains');
+      expect(debugReport).toHaveProperty('llms');
     }, 10000);
 
     it('should throw if the given model is not available', async () => {
@@ -153,18 +184,82 @@ describe('LLMService', () => {
         inputVariables: ['existing_answer', 'context'],
       });
 
-      const { output, llmCallCount } = await service.generateRefineOutput(
-        model,
-        initialPromptTemplate,
-        refinePromptTemplate,
-        {
-          input_documents: documents,
-        },
-      );
+      const { output, llmCallCount, debugReport } =
+        await service.generateRefineOutput(
+          model,
+          initialPromptTemplate,
+          refinePromptTemplate,
+          {
+            input_documents: documents,
+          },
+        );
 
       expect(output).toBeDefined();
       expect(output['output_text']).toContain('llm-structurizer');
       expect(llmCallCount).toBe(2);
+      expect(debugReport).toBeNull();
+    }, 20000);
+
+    it('should generate the correct output from a chunked document with a debug report', async () => {
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
+      const text = `
+        This is the first sentence of the testing text.\n
+        This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
+        `;
+      const documents = await service.splitDocument(text, {
+        chunkSize: 100,
+        overlap: 0,
+      });
+      const initialPromptTemplate = new PromptTemplate({
+        template: `Given the following text, please write the value to output.
+        ---------------------
+        {context}
+        ---------------------
+        Output:
+        `,
+        inputVariables: ['context'],
+      });
+
+      const refinePromptTemplate = new PromptTemplate({
+        template: `
+        Given the following text, please only write the tagged value to output.
+        ---------------------
+        You have provided an existing output: 
+        {existing_answer}
+
+        We have the opportunity to refine the existing output (only if needed) with some more context below.
+        ---------------------
+        Context:
+        {context}
+        ---------------------
+        Given the new context, refine the original output to give a better answer. 
+        If the context isn't useful, return the existing output.
+        `,
+        inputVariables: ['existing_answer', 'context'],
+      });
+
+      const { output, llmCallCount, debugReport } =
+        await service.generateRefineOutput(
+          model,
+          initialPromptTemplate,
+          refinePromptTemplate,
+          {
+            input_documents: documents,
+          },
+          true,
+        );
+
+      expect(output).toBeDefined();
+      expect(output['output_text']).toContain('llm-structurizer');
+      expect(llmCallCount).toBe(2);
+      expect(debugReport).toBeDefined();
+      expect(debugReport).toHaveProperty('chainCallCount');
+      expect(debugReport).toHaveProperty('llmCallCount');
+      expect(debugReport).toHaveProperty('chains');
+      expect(debugReport).toHaveProperty('llms');
     }, 20000);
 
     it('should throw if the model given is not available', async () => {
