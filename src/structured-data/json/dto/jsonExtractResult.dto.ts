@@ -1,10 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsObject,
+  IsOptional,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { RefineRecap } from '../types/types';
+import { DebugReport } from 'src/structured-data/llm/types/types';
 
 @ValidatorConstraint({ name: 'boolean-or-refineParams', async: false })
 class IsBooleanOrRefineRecap implements ValidatorConstraintInterface {
@@ -65,4 +68,11 @@ export class JsonExtractResultDto {
     description: 'structured data extracted from text as json',
   })
   output: string;
+
+  @ApiPropertyOptional({
+    description: 'debug report of the extraction',
+  })
+  @IsObject()
+  @IsOptional()
+  debug?: DebugReport;
 }

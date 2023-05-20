@@ -20,9 +20,15 @@ export class JsonService {
 
   constructor(private llmService: LLMService) {}
 
-  async extractWithSchema(model: Model, text: string, schema: string) {
-    const output = await this.llmService.generateOutput(
+  async extractWithSchema(
+    model: Model,
+    debug = false,
+    text: string,
+    schema: string,
+  ) {
+    const { output, debugReport } = await this.llmService.generateOutput(
       model,
+      debug,
       jsonZeroShotSchemaExtraction,
       {
         context: text,
@@ -31,7 +37,7 @@ export class JsonService {
     );
     try {
       const json: object = JSON.parse(output.text);
-      return json;
+      return { json, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
@@ -39,24 +45,27 @@ export class JsonService {
 
   async extractWithSchemaAndRefine(
     model: Model,
+    debug = false,
     text: string,
     schema: string,
     refineParams?: RefineParams,
   ) {
     const params = refineParams || this.defaultRefineParams;
     const documents = await this.llmService.splitDocument(text, params);
-    const { output, llmCallCount } = await this.llmService.generateRefineOutput(
-      model,
-      jsonZeroShotSchemaExtraction,
-      jsonZeroShotSchemaExtractionRefine,
-      {
-        input_documents: documents,
-        jsonSchema: schema,
-      },
-    );
+    const { output, llmCallCount, debugReport } =
+      await this.llmService.generateRefineOutput(
+        model,
+        debug,
+        jsonZeroShotSchemaExtraction,
+        jsonZeroShotSchemaExtractionRefine,
+        {
+          input_documents: documents,
+          jsonSchema: schema,
+        },
+      );
     try {
       const json: object = JSON.parse(output.output_text);
-      return { json, refineRecap: { ...params, llmCallCount } };
+      return { json, refineRecap: { ...params, llmCallCount }, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
@@ -64,11 +73,13 @@ export class JsonService {
 
   async extractWithExample(
     model: Model,
+    debug = false,
     text: string,
     example: { input: string; output: string },
   ) {
-    const output = await this.llmService.generateOutput(
+    const { output, debugReport } = await this.llmService.generateOutput(
       model,
+      debug,
       jsonOneShotExtraction,
       {
         context: text,
@@ -78,7 +89,7 @@ export class JsonService {
     );
     try {
       const json = JSON.parse(output.text);
-      return json;
+      return { json, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
@@ -86,6 +97,7 @@ export class JsonService {
 
   async analyzeJsonOutput(
     model: Model,
+    debug = false,
     jsonOutput: string,
     originalText: string,
     schema: string,
@@ -102,12 +114,17 @@ export class JsonService {
       ],
     };
 
-    const output = await this.llmService.generateOutput(model, jsonAnalysis, {
-      jsonSchema: schema,
-      originalText,
-      jsonOutput,
-      outputFormat: JSON.stringify(outputFormat),
-    });
+    const { output, debugReport } = await this.llmService.generateOutput(
+      model,
+      debug,
+      jsonAnalysis,
+      {
+        jsonSchema: schema,
+        originalText,
+        jsonOutput,
+        outputFormat: JSON.stringify(outputFormat),
+      },
+    );
     try {
       const json: Analysis = JSON.parse(output.text);
       if (
@@ -120,7 +137,7 @@ export class JsonService {
             typeof correction.suggestion === 'string',
         )
       ) {
-        return json;
+        return { json, debugReport };
       } else {
         throw new InvalidJsonOutputError();
       }

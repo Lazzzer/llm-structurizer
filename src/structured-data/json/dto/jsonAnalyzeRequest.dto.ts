@@ -1,5 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsJSON, IsNotEmpty, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsJSON,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+} from 'class-validator';
 
 export class JsonAnalyzeRequestDto {
   @ApiProperty({
@@ -41,4 +47,13 @@ export class JsonAnalyzeRequestDto {
   })
   @IsJSON()
   jsonSchema: string;
+
+  @ApiPropertyOptional({
+    description: 'add a debug report',
+    default: false,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  debug?: boolean;
 }

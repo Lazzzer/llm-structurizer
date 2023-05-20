@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsObject, IsOptional } from 'class-validator';
+import { DebugReport } from 'src/structured-data/llm/types/types';
 
 export class Analysis {
   @ApiProperty({
@@ -39,4 +40,11 @@ export class JsonAnalyzeResultDto {
   })
   @IsObject()
   analysis: Analysis;
+
+  @ApiPropertyOptional({
+    description: 'debug report of the extraction',
+  })
+  @IsObject()
+  @IsOptional()
+  debug?: DebugReport;
 }

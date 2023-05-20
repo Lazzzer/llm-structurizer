@@ -17,11 +17,13 @@ import {
 import { Document } from 'langchain/document';
 import { Model } from './types/types';
 import { RefineCallbackHandler } from './callbackHandlers/refineHandler';
+import { DebugCallbackHandler } from './callbackHandlers/debugHandler';
 
 @Injectable()
 export class LLMService {
   async generateOutput(
     model: Model,
+    debug: boolean,
     promptTemplate: PromptTemplate,
     chainValues: ChainValues,
   ) {
@@ -39,8 +41,9 @@ export class LLMService {
     });
 
     try {
-      const output = await llmChain.call(chainValues);
-      return output;
+      const handler = new DebugCallbackHandler();
+      const output = await llmChain.call(chainValues, debug ? [handler] : []);
+      return { output, debugReport: debug ? handler.debugReport : null };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
         throw new LLMApiKeyInvalidError(model.name);
@@ -54,6 +57,7 @@ export class LLMService {
 
   async generateRefineOutput(
     model: Model,
+    debug: boolean,
     initialPromptTemplate: PromptTemplate,
     refinePromptTemplate: PromptTemplate,
     chainValues: ChainValues & { input_documents: Document[] },
@@ -89,8 +93,17 @@ export class LLMService {
 
     try {
       const handler = new RefineCallbackHandler();
-      const output = await refineChain.call(chainValues, [handler]);
-      return { output, llmCallCount: handler.llmCallCount };
+      const debugHandler = new DebugCallbackHandler();
+
+      const output = await refineChain.call(
+        chainValues,
+        debug ? [handler, debugHandler] : [handler],
+      );
+      return {
+        output,
+        llmCallCount: handler.llmCallCount,
+        debugReport: debug ? debugHandler.debugReport : null,
+      };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
         throw new LLMApiKeyInvalidError(model.name);

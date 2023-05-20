@@ -25,7 +25,7 @@ import {
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 import { JsonAnalyzeRequestDto } from './dto/jsonAnalyzeRequest.dto';
-import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
+import { JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
 import {
   LLMApiKeyInvalidError,
   LLMApiKeyMissingError,
@@ -71,12 +71,13 @@ export class JsonController {
   @HttpCode(200)
   @Post('schema')
   async extractSchema(@Body() request: JsonExtractSchemaRequestDto) {
-    const { text, model, jsonSchema, refine } = request;
+    const { text, model, debug, jsonSchema, refine } = request;
     try {
       if (refine) {
-        const { json, refineRecap } =
+        const { json, refineRecap, debugReport } =
           await this.jsonService.extractWithSchemaAndRefine(
             model,
+            debug,
             text,
             jsonSchema,
             typeof refine === 'object' ? refine : undefined,
@@ -85,11 +86,13 @@ export class JsonController {
           model: model.name,
           refine: refineRecap,
           output: JSON.stringify(json),
+          debug: debug ? debugReport : undefined,
         };
         return response;
       } else {
-        const json = await this.jsonService.extractWithSchema(
+        const { json, debugReport } = await this.jsonService.extractWithSchema(
           model,
+          debug,
           text,
           jsonSchema,
         );
@@ -97,6 +100,7 @@ export class JsonController {
           model: model.name,
           refine: false,
           output: JSON.stringify(json),
+          debug: debug ? debugReport : undefined,
         };
         return response;
       }
@@ -140,16 +144,22 @@ export class JsonController {
   @HttpCode(200)
   @Post('example')
   async extractExample(@Body() request: JsonExtractExampleRequestDto) {
-    const { text, model, exampleInput, exampleOutput } = request;
+    const { text, model, debug, exampleInput, exampleOutput } = request;
     try {
-      const json = await this.jsonService.extractWithExample(model, text, {
-        input: exampleInput,
-        output: exampleOutput,
-      });
+      const { json, debugReport } = await this.jsonService.extractWithExample(
+        model,
+        debug,
+        text,
+        {
+          input: exampleInput,
+          output: exampleOutput,
+        },
+      );
       const response: JsonExtractResultDto = {
         model: model.name,
         refine: false,
         output: JSON.stringify(json),
+        debug: debug ? debugReport : undefined,
       };
       return response;
     } catch (e) {
@@ -181,17 +191,20 @@ export class JsonController {
   @HttpCode(200)
   @Post('analysis')
   async analyzeJsonOutput(@Body() request: JsonAnalyzeRequestDto) {
-    const { model, jsonSchema, originalText, jsonOutput } = request;
+    const { model, debug, jsonSchema, originalText, jsonOutput } = request;
     try {
-      const analysis: Analysis = await this.jsonService.analyzeJsonOutput(
-        model,
-        jsonOutput,
-        originalText,
-        jsonSchema,
-      );
+      const { json: analysis, debugReport } =
+        await this.jsonService.analyzeJsonOutput(
+          model,
+          debug,
+          jsonOutput,
+          originalText,
+          jsonSchema,
+        );
       const response: JsonAnalyzeResultDto = {
         model: model.name,
         analysis,
+        debug: debugReport ? debugReport : undefined,
       };
       return response;
     } catch (e) {

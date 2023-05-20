@@ -4,6 +4,7 @@ import {
   IntersectionType,
 } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsJSON,
   IsNotEmpty,
   IsObject,
@@ -64,6 +65,15 @@ class JsonExtractRequestDto {
   })
   @IsNotEmpty()
   text: string;
+
+  @ApiPropertyOptional({
+    description: 'add a debug report',
+    default: false,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  debug?: boolean;
 }
 
 class SchemaRequestDto {
