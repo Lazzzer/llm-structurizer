@@ -77,10 +77,10 @@ export class JsonController {
         const { json, refineRecap, debugReport } =
           await this.jsonService.extractWithSchemaAndRefine(
             model,
-            debug,
             text,
             jsonSchema,
             typeof refine === 'object' ? refine : undefined,
+            debug,
           );
         const response: JsonExtractResultDto = {
           model: model.name,
@@ -92,9 +92,9 @@ export class JsonController {
       } else {
         const { json, debugReport } = await this.jsonService.extractWithSchema(
           model,
-          debug,
           text,
           jsonSchema,
+          debug,
         );
         const response: JsonExtractResultDto = {
           model: model.name,
@@ -148,12 +148,12 @@ export class JsonController {
     try {
       const { json, debugReport } = await this.jsonService.extractWithExample(
         model,
-        debug,
         text,
         {
           input: exampleInput,
           output: exampleOutput,
         },
+        debug,
       );
       const response: JsonExtractResultDto = {
         model: model.name,
@@ -196,10 +196,10 @@ export class JsonController {
       const { json: analysis, debugReport } =
         await this.jsonService.analyzeJsonOutput(
           model,
-          debug,
           jsonOutput,
           originalText,
           jsonSchema,
+          debug,
         );
       const response: JsonAnalyzeResultDto = {
         model: model.name,

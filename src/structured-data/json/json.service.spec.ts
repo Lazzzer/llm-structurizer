@@ -32,7 +32,7 @@ describe('JsonService', () => {
         name: 'gpt-3.5-turbo',
       };
       const schema = '{"title": "string", "description": "string"}';
-      const json = await service.extractWithSchema(model, text, schema);
+      const { json } = await service.extractWithSchema(model, text, schema);
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
       expect(json).toHaveProperty('description');
@@ -45,7 +45,10 @@ describe('JsonService', () => {
       };
       const schema = '{"title": "string", "description": "string"';
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
-        text: '{"title": "string", "description": "string"',
+        output: {
+          text: '{"title": "string", "description": "string"',
+        },
+        debugReport: null,
       });
       await expect(
         service.extractWithSchema(model, text, schema),
@@ -63,7 +66,7 @@ describe('JsonService', () => {
         input: 'This is a text',
         output: '{"title": "string", "description": "string"}',
       };
-      const json = await service.extractWithExample(model, text, example);
+      const { json } = await service.extractWithExample(model, text, example);
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
       expect(json).toHaveProperty('description');
@@ -79,7 +82,10 @@ describe('JsonService', () => {
         output: '{"title": "string", "description": "string"',
       };
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
-        text: '{"title": "string", "description": "string"',
+        output: {
+          text: '{"title": "string", "description": "string"',
+        },
+        debugReport: null,
       });
       await expect(
         service.extractWithExample(model, text, example),
@@ -98,7 +104,7 @@ describe('JsonService', () => {
         apiKey: configService.get('OPENAI_API_KEY'),
         name: 'gpt-3.5-turbo',
       };
-      const analysis = await service.analyzeJsonOutput(
+      const { json: analysis } = await service.analyzeJsonOutput(
         model,
         JSON.stringify(jsonOutput),
         originalText,
@@ -119,7 +125,10 @@ describe('JsonService', () => {
         name: 'gpt-3.5-turbo',
       };
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
-        text: '{}',
+        output: {
+          text: '{}{analysis}',
+        },
+        debugReport: null,
       });
       await expect(
         service.analyzeJsonOutput(

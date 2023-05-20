@@ -23,9 +23,9 @@ import { DebugCallbackHandler } from './callbackHandlers/debugHandler';
 export class LLMService {
   async generateOutput(
     model: Model,
-    debug: boolean,
     promptTemplate: PromptTemplate,
     chainValues: ChainValues,
+    debug = false,
   ) {
     const llm = this.retrieveAvailableModel(model);
 
@@ -43,6 +43,7 @@ export class LLMService {
     try {
       const handler = new DebugCallbackHandler();
       const output = await llmChain.call(chainValues, debug ? [handler] : []);
+
       return { output, debugReport: debug ? handler.debugReport : null };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
@@ -57,10 +58,10 @@ export class LLMService {
 
   async generateRefineOutput(
     model: Model,
-    debug: boolean,
     initialPromptTemplate: PromptTemplate,
     refinePromptTemplate: PromptTemplate,
     chainValues: ChainValues & { input_documents: Document[] },
+    debug = false,
   ) {
     const llm = this.retrieveAvailableModel(model);
 

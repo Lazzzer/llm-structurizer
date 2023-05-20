@@ -22,18 +22,18 @@ export class JsonService {
 
   async extractWithSchema(
     model: Model,
-    debug = false,
     text: string,
     schema: string,
+    debug = false,
   ) {
     const { output, debugReport } = await this.llmService.generateOutput(
       model,
-      debug,
       jsonZeroShotSchemaExtraction,
       {
         context: text,
         jsonSchema: schema,
       },
+      debug,
     );
     try {
       const json: object = JSON.parse(output.text);
@@ -45,23 +45,23 @@ export class JsonService {
 
   async extractWithSchemaAndRefine(
     model: Model,
-    debug = false,
     text: string,
     schema: string,
     refineParams?: RefineParams,
+    debug = false,
   ) {
     const params = refineParams || this.defaultRefineParams;
     const documents = await this.llmService.splitDocument(text, params);
     const { output, llmCallCount, debugReport } =
       await this.llmService.generateRefineOutput(
         model,
-        debug,
         jsonZeroShotSchemaExtraction,
         jsonZeroShotSchemaExtractionRefine,
         {
           input_documents: documents,
           jsonSchema: schema,
         },
+        debug,
       );
     try {
       const json: object = JSON.parse(output.output_text);
@@ -73,19 +73,19 @@ export class JsonService {
 
   async extractWithExample(
     model: Model,
-    debug = false,
     text: string,
     example: { input: string; output: string },
+    debug = false,
   ) {
     const { output, debugReport } = await this.llmService.generateOutput(
       model,
-      debug,
       jsonOneShotExtraction,
       {
         context: text,
         exampleInput: example.input,
         exampleOutput: example.output,
       },
+      debug,
     );
     try {
       const json = JSON.parse(output.text);
@@ -97,10 +97,10 @@ export class JsonService {
 
   async analyzeJsonOutput(
     model: Model,
-    debug = false,
     jsonOutput: string,
     originalText: string,
     schema: string,
+    debug = false,
   ) {
     const outputFormat: Analysis = {
       corrections: [
@@ -116,7 +116,6 @@ export class JsonService {
 
     const { output, debugReport } = await this.llmService.generateOutput(
       model,
-      debug,
       jsonAnalysis,
       {
         jsonSchema: schema,
@@ -124,6 +123,7 @@ export class JsonService {
         jsonOutput,
         outputFormat: JSON.stringify(outputFormat),
       },
+      debug,
     );
     try {
       const json: Analysis = JSON.parse(output.text);
