@@ -7,7 +7,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { RefineRecap } from '../types/types';
-import { DebugReport } from 'src/structured-data/llm/types/types';
+import { DebugReport } from '../../llm/dto/debug.dto';
 
 @ValidatorConstraint({ name: 'boolean-or-refineParams', async: false })
 class IsBooleanOrRefineRecap implements ValidatorConstraintInterface {

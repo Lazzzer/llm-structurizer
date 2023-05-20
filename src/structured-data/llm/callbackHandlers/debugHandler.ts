@@ -1,6 +1,6 @@
 import { BaseCallbackHandler } from 'langchain/callbacks';
 import { ChainValues, LLMResult } from 'langchain/schema';
-import { ChainCall, DebugReport, LlmCall } from '../types/types';
+import { ChainCall, DebugReport, LlmCall } from '../dto/debug.dto';
 
 export class DebugCallbackHandler extends BaseCallbackHandler {
   name = 'DebugCallbackHandler';

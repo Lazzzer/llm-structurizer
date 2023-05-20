@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsObject, IsOptional } from 'class-validator';
-import { DebugReport } from 'src/structured-data/llm/types/types';
+import { DebugReport } from '../../llm/dto/debug.dto';
 
 export class Analysis {
   @ApiProperty({
