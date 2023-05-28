@@ -1,11 +1,9 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AxiosResponse } from 'axios';
 import { Poppler } from 'node-poppler';
 import {
   PdfExtensionError,
-  PdfMagicNumberError,
   PdfNotParsedError,
   PdfSizeError,
 } from './exceptions/exceptions';
@@ -43,7 +41,9 @@ export class PdfParserService {
       responseType: 'arraybuffer',
     });
 
-    this.checkResponse(response);
+    if (response.headers['content-length'] > 5 * 1024 * 1024) {
+      throw new PdfSizeError();
+    }
 
     return Buffer.from(response.data, 'binary');
   }
@@ -60,18 +60,5 @@ export class PdfParserService {
       .join('\n');
 
     return processedText;
-  }
-
-  private checkResponse(response: AxiosResponse) {
-    if (response.headers['content-length'] > 5 * 1024 * 1024) {
-      throw new PdfSizeError();
-    }
-
-    const pdfMagicNumber = Buffer.from([0x25, 0x50, 0x44, 0x46]); // '%PDF' in hexadecimal
-    const bufferStart = response.data.subarray(0, 4);
-
-    if (!bufferStart.equals(pdfMagicNumber)) {
-      throw new PdfMagicNumberError();
-    }
   }
 }

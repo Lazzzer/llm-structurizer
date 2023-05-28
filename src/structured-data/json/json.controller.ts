@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -24,7 +25,12 @@ import {
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { JsonExtractResultDto } from './dto/jsonExtractResult.dto';
 import { JsonAnalyzeRequestDto } from './dto/jsonAnalyzeRequest.dto';
-import { Analysis, JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
+import { JsonAnalyzeResultDto } from './dto/jsonAnalyzeResult.dto';
+import {
+  LLMApiKeyInvalidError,
+  LLMApiKeyMissingError,
+  LLMBadRequestReceivedError,
+} from '../llm/exceptions/exceptions';
 
 @ApiUnauthorizedResponse({
   description: "The API key in request's header is missing or invalid.",
@@ -49,7 +55,7 @@ export class JsonController {
     description: `This endpoint returns structured data from input text as json.  
     It accepts a json schema as model for data extraction. The Refine technique can be used for longer texts.\n
 
-    Available model: gpt-3.5-turbo
+    Available models: gpt-3.5-turbo, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -65,25 +71,51 @@ export class JsonController {
   @HttpCode(200)
   @Post('schema')
   async extractSchema(@Body() request: JsonExtractSchemaRequestDto) {
-    const { text, model, jsonSchema, refine } = request;
-    const extractionMethod = refine
-      ? 'extractWithSchemaAndRefine'
-      : 'extractWithSchema';
+    const { text, model, debug, jsonSchema, refine } = request;
     try {
-      const json = await this.jsonService[extractionMethod](
-        text,
-        model,
-        jsonSchema,
-      );
-      const response: JsonExtractResultDto = {
-        model,
-        refine: refine || false,
-        output: JSON.stringify(json),
-      };
-      return response;
+      if (refine) {
+        const { json, refineRecap, debugReport } =
+          await this.jsonService.extractWithSchemaAndRefine(
+            model,
+            text,
+            jsonSchema,
+            typeof refine === 'object' ? refine : undefined,
+            debug,
+          );
+        const response: JsonExtractResultDto = {
+          model: model.name,
+          refine: refineRecap,
+          output: JSON.stringify(json),
+          debug: debug ? debugReport : undefined,
+        };
+        return response;
+      } else {
+        const { json, debugReport } = await this.jsonService.extractWithSchema(
+          model,
+          text,
+          jsonSchema,
+          debug,
+        );
+        const response: JsonExtractResultDto = {
+          model: model.name,
+          refine: false,
+          output: JSON.stringify(json),
+          debug: debug ? debugReport : undefined,
+        };
+        return response;
+      }
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
+      if (
+        e instanceof InvalidJsonOutputError ||
+        e instanceof LLMBadRequestReceivedError
+      ) {
         throw new UnprocessableEntityException(e.message);
+      }
+      if (
+        e instanceof LLMApiKeyMissingError ||
+        e instanceof LLMApiKeyInvalidError
+      ) {
+        throw new BadRequestException(e.message);
       }
       throw new InternalServerErrorException(e.message);
     }
@@ -96,7 +128,7 @@ export class JsonController {
     It accepts a fully featured example with a given input text and a desired output json which will be used for data extraction.
     If chunking is needed, the zero-shot variant with a schema is better suited for the task.\n
 
-    Available model: gpt-3.5-turbo
+    Available models: gpt-3.5-turbo, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -112,16 +144,22 @@ export class JsonController {
   @HttpCode(200)
   @Post('example')
   async extractExample(@Body() request: JsonExtractExampleRequestDto) {
-    const { text, model, exampleInput, exampleOutput } = request;
+    const { text, model, debug, exampleInput, exampleOutput } = request;
     try {
-      const json = await this.jsonService.extractWithExample(text, model, {
-        input: exampleInput,
-        output: exampleOutput,
-      });
-      const response: JsonExtractResultDto = {
+      const { json, debugReport } = await this.jsonService.extractWithExample(
         model,
+        text,
+        {
+          input: exampleInput,
+          output: exampleOutput,
+        },
+        debug,
+      );
+      const response: JsonExtractResultDto = {
+        model: model.name,
         refine: false,
         output: JSON.stringify(json),
+        debug: debug ? debugReport : undefined,
       };
       return response;
     } catch (e) {
@@ -138,7 +176,7 @@ export class JsonController {
     description: `This endpoint returns an analysis of a generated json output by comparing it to the original text and its json schema.  
     It accepts the json output to analyze, the original text and the json schema used for data extraction.\n
 
-    Available model: gpt-4
+    Available models: gpt-3.5-turbo, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -153,17 +191,20 @@ export class JsonController {
   @HttpCode(200)
   @Post('analysis')
   async analyzeJsonOutput(@Body() request: JsonAnalyzeRequestDto) {
-    const { model, jsonSchema, originalText, jsonOutput } = request;
+    const { model, debug, jsonSchema, originalText, jsonOutput } = request;
     try {
-      const analysis: Analysis = await this.jsonService.analyzeJsonOutput(
-        model,
-        jsonOutput,
-        originalText,
-        jsonSchema,
-      );
+      const { json: analysis, debugReport } =
+        await this.jsonService.analyzeJsonOutput(
+          model,
+          jsonOutput,
+          originalText,
+          jsonSchema,
+          debug,
+        );
       const response: JsonAnalyzeResultDto = {
-        model,
+        model: model.name,
         analysis,
+        debug: debugReport ? debugReport : undefined,
       };
       return response;
     } catch (e) {

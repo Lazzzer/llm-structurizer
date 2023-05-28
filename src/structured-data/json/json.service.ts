@@ -8,58 +8,76 @@ import {
 } from './prompts';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { Analysis } from './dto/jsonAnalyzeResult.dto';
+import { Model } from '../llm/types/types';
+import { RefineParams } from './types/types';
 
 @Injectable()
 export class JsonService {
+  private defaultRefineParams: RefineParams = {
+    chunkSize: 2000,
+    overlap: 100,
+  };
+
   constructor(private llmService: LLMService) {}
 
-  async extractWithSchema(text: string, model: string, schema: string) {
-    const output = await this.llmService.generateOutput(
+  async extractWithSchema(
+    model: Model,
+    text: string,
+    schema: string,
+    debug = false,
+  ) {
+    const { output, debugReport } = await this.llmService.generateOutput(
       model,
       jsonZeroShotSchemaExtraction,
       {
         context: text,
         jsonSchema: schema,
       },
+      debug,
     );
     try {
       const json: object = JSON.parse(output.text);
-      return json;
+      return { json, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
   }
 
   async extractWithSchemaAndRefine(
+    model: Model,
     text: string,
-    model: string,
     schema: string,
+    refineParams?: RefineParams,
+    debug = false,
   ) {
-    const documents = await this.llmService.splitDocument(text);
-    const output = await this.llmService.generateRefineOutput(
-      model,
-      jsonZeroShotSchemaExtraction,
-      jsonZeroShotSchemaExtractionRefine,
-      {
-        input_documents: documents,
-        jsonSchema: schema,
-      },
-    );
-
+    const params = refineParams || this.defaultRefineParams;
+    const documents = await this.llmService.splitDocument(text, params);
+    const { output, llmCallCount, debugReport } =
+      await this.llmService.generateRefineOutput(
+        model,
+        jsonZeroShotSchemaExtraction,
+        jsonZeroShotSchemaExtractionRefine,
+        {
+          input_documents: documents,
+          jsonSchema: schema,
+        },
+        debug,
+      );
     try {
       const json: object = JSON.parse(output.output_text);
-      return json;
+      return { json, refineRecap: { ...params, llmCallCount }, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
   }
 
   async extractWithExample(
+    model: Model,
     text: string,
-    model: string,
     example: { input: string; output: string },
+    debug = false,
   ) {
-    const output = await this.llmService.generateOutput(
+    const { output, debugReport } = await this.llmService.generateOutput(
       model,
       jsonOneShotExtraction,
       {
@@ -67,39 +85,49 @@ export class JsonService {
         exampleInput: example.input,
         exampleOutput: example.output,
       },
+      debug,
     );
     try {
       const json = JSON.parse(output.text);
-      return json;
+      return { json, debugReport };
     } catch (e) {
       throw new InvalidJsonOutputError();
     }
   }
 
   async analyzeJsonOutput(
-    model: string,
+    model: Model,
     jsonOutput: string,
     originalText: string,
     schema: string,
+    debug = false,
   ) {
     const outputFormat: Analysis = {
       corrections: [
         {
-          field: 'the field in the generated JSON that needs to be corrected',
+          field:
+            'the field in the generated JSON that needs to be corrected, only specify the parent field if the issue is nested',
           issue: 'the issue you identified',
           description:
-            'your description of the issue, give your reasoning for why it is an issue',
+            'your description of the issue, give your full reasoning for why it is an issue. it should be as detailed as possible',
           suggestion: 'your suggestion for correction',
         },
       ],
+      textAnalysis:
+        'Your detailed and precise analysis, exposing your whole thought process, step by step. Do not provide a corrected JSON output in this field. Generate a readable text in markdown.',
     };
 
-    const output = await this.llmService.generateOutput(model, jsonAnalysis, {
-      jsonSchema: schema,
-      originalText,
-      jsonOutput,
-      outputFormat: JSON.stringify(outputFormat),
-    });
+    const { output, debugReport } = await this.llmService.generateOutput(
+      model,
+      jsonAnalysis,
+      {
+        jsonSchema: schema,
+        originalText,
+        jsonOutput,
+        outputFormat: JSON.stringify(outputFormat),
+      },
+      debug,
+    );
     try {
       const json: Analysis = JSON.parse(output.text);
       if (
@@ -112,7 +140,7 @@ export class JsonService {
             typeof correction.suggestion === 'string',
         )
       ) {
-        return json;
+        return { json, debugReport };
       } else {
         throw new InvalidJsonOutputError();
       }

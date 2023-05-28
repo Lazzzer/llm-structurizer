@@ -1,15 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JsonController } from './json.controller';
 import { JsonService } from './json.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LLMService } from '../llm/llm.service';
-import { Model } from './dto/jsonExtractRequest.dto';
-import { UnprocessableEntityException } from '@nestjs/common';
+import {
+  BadRequestException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 
 describe('JsonController', () => {
   let controller: JsonController;
   let service: JsonService;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,6 +23,7 @@ describe('JsonController', () => {
 
     controller = module.get<JsonController>(JsonController);
     service = module.get<JsonService>(JsonService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -28,7 +32,10 @@ describe('JsonController', () => {
 
   it('should return a JsonExtractResultDto from a correct data structuring request', async () => {
     const text = 'This is a text';
-    const model = Model.GPT_3_5_TURBO;
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
     const schema = '{"title": "string", "description": "string"}';
     const json = await controller.extractSchema({
       text,
@@ -37,15 +44,56 @@ describe('JsonController', () => {
     });
     expect(json).toBeDefined();
     expect(json).toMatchObject({
-      model,
+      model: expect.any(String),
       refine: expect.any(Boolean),
       output: expect.any(String),
     });
     expect(() => JSON.parse(json.output)).not.toThrow();
   });
+
+  it("should call extractWitSchemaAndRefine() if the 'refine' parameter is set to true", async () => {
+    const text = 'This is a text';
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    const spy = jest.spyOn(service, 'extractWithSchemaAndRefine');
+    await controller.extractSchema({
+      text,
+      model,
+      jsonSchema: schema,
+      refine: true,
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it("should call extractWitSchemaAndRefine() if the 'refine' parameter is a correct RefineParams object", async () => {
+    const text = 'This is a text';
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    const spy = jest.spyOn(service, 'extractWithSchemaAndRefine');
+    await controller.extractSchema({
+      text,
+      model,
+      jsonSchema: schema,
+      refine: {
+        chunkSize: 100,
+        overlap: 0,
+      },
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
   it('should throw a UnprocessableEntityException if the output is not a valid json', async () => {
     const text = 'This is a text';
-    const model = Model.GPT_3_5_TURBO;
+    const model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
     const schema = '{"title": "string", "description": "string"}';
     jest.spyOn(service, 'extractWithSchema').mockImplementation(async () => {
       throw new InvalidJsonOutputError();
@@ -57,5 +105,36 @@ describe('JsonController', () => {
         jsonSchema: schema,
       }),
     ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('should throw a BadRequestException if the given api key is missing', async () => {
+    const text = 'This is a text';
+    const model = {
+      name: 'gpt-3.5-turbo',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    await expect(
+      controller.extractSchema({
+        text,
+        model,
+        jsonSchema: schema,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw a BadRequestException if the given api key is invalid', async () => {
+    const text = 'This is a text';
+    const model = {
+      name: 'gpt-3.5-turbo',
+      apiKey: 'invalid',
+    };
+    const schema = '{"title": "string", "description": "string"}';
+    await expect(
+      controller.extractSchema({
+        text,
+        model,
+        jsonSchema: schema,
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 });

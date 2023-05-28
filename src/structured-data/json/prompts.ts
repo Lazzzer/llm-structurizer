@@ -39,7 +39,7 @@ If the context isn't useful, return the existing output.
 Please generate the output JSON object containing the necessary information and ensure it follows the given schema. 
 If the input text contains any attributes not mentioned in the schema, please disregard them. 
 Do not add any fields that are not in the schema.
-All output must be in JSON format and follow the schema specified above.
+Your outputs must ONLY be in JSON format and follow the schema specified above.
 `;
 
 const jsonOneShotExtractionTemplate = `

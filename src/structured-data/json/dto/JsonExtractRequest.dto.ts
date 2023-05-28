@@ -3,39 +3,113 @@ import {
   ApiPropertyOptional,
   IntersectionType,
 } from '@nestjs/swagger';
-import { IsEnum, IsJSON, IsNotEmpty } from 'class-validator';
+import {
+  IsBoolean,
+  IsJSON,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
+import { RefineParams } from '../types/types';
 
-export enum Model {
-  GPT_3_5_TURBO = 'gpt-3.5-turbo',
+@ValidatorConstraint({ name: 'boolean-or-refineParams', async: false })
+class IsBooleanOrRefineParams implements ValidatorConstraintInterface {
+  validate(text: any) {
+    if (typeof text === 'boolean') {
+      return true;
+    }
+    if (typeof text === 'object') {
+      return (
+        typeof text.chunkSize === 'number' &&
+        typeof text.overlap === 'number' &&
+        text.chunkSize > 0 &&
+        text.overlap >= 0 &&
+        text.chunkSize > text.overlap
+      );
+    }
+  }
+
+  defaultMessage() {
+    return 'refine can be undefined, a boolean or an object with chunkSize > 0 and overlap >= 0';
+  }
 }
 
 class JsonExtractRequestDto {
   @ApiProperty({
-    enum: Model,
-    description: 'model available for data extraction',
+    description: 'model to use for data extraction',
+    type: 'object',
+    properties: {
+      apiKey: {
+        type: 'string',
+        description: 'api key of the model',
+        nullable: true,
+      },
+      name: {
+        type: 'string',
+        description: 'name of the model',
+      },
+    },
   })
-  @IsEnum(Model)
-  model: Model;
+  @IsObject()
+  model: {
+    apiKey?: string;
+    name: string;
+  };
 
   @ApiProperty({
     description: 'text to extract structured data from',
   })
   @IsNotEmpty()
   text: string;
+
+  @ApiPropertyOptional({
+    description: 'if a debug report of the json extraction should be generated',
+    default: false,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  debug?: boolean;
 }
 
 class SchemaRequestDto {
-  @ApiPropertyOptional({
-    description: 'whether to use refine multi-step extraction',
-    default: false,
-  })
-  refine?: boolean;
-
   @ApiProperty({
     description: 'json schema to use as model for data extraction',
   })
   @IsJSON()
   jsonSchema: string;
+
+  @ApiPropertyOptional({
+    oneOf: [
+      {
+        description: 'if refine multi-step extraction should be used',
+        type: 'boolean',
+        default: false,
+      },
+      {
+        description: 'parameters for refine multi-step extraction',
+        type: 'object',
+        properties: {
+          chunkSize: {
+            type: 'number',
+            description: 'size of chunks to split the document into',
+            default: 2000,
+          },
+          overlap: {
+            type: 'number',
+            description: 'overlap between chunks',
+            default: 100,
+          },
+        },
+      },
+    ],
+  })
+  @Validate(IsBooleanOrRefineParams)
+  @IsOptional()
+  refine?: boolean | RefineParams;
 }
 
 class ExampleRequestDto {
@@ -46,7 +120,7 @@ class ExampleRequestDto {
   exampleInput: string;
 
   @ApiProperty({
-    description: 'example output json',
+    description: 'example of desired json output',
   })
   @IsJSON()
   exampleOutput: string;

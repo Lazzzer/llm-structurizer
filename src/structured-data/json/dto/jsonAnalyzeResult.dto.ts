@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
+import { DebugReport } from '../../llm/dto/debug.dto';
 
 export class Analysis {
   @ApiProperty({
@@ -7,6 +8,12 @@ export class Analysis {
   })
   @IsArray()
   corrections: Correction[];
+
+  @ApiProperty({
+    description: 'full textual analysis of the issues',
+  })
+  @IsString()
+  textAnalysis: string;
 }
 
 export class Correction {
@@ -39,4 +46,11 @@ export class JsonAnalyzeResultDto {
   })
   @IsObject()
   analysis: Analysis;
+
+  @ApiPropertyOptional({
+    description: 'debug report of the analysis',
+  })
+  @IsObject()
+  @IsOptional()
+  debug?: DebugReport;
 }

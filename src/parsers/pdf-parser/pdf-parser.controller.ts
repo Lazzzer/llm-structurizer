@@ -57,7 +57,8 @@ const pdfPipe = new ParseFilePipeBuilder()
   description: 'The request body or the uploaded file is invalid or missing.',
 })
 @ApiUnprocessableEntityResponse({
-  description: 'The PDF file is not searchable.',
+  description:
+    'The PDF does not contain plain text or information in text format.',
 })
 @ApiSecurity('apiKey')
 @ApiTags('parsers')
@@ -71,8 +72,7 @@ export class PdfParserController {
   @ApiOperation({
     summary: 'Return text from uploaded PDF file',
     description: `This endpoint retrieves the content of an uploaded PDF file and returns it as text.\n   
-    The file must be a searchable PDF, with a maximum size of 5MB.  
-    Its buffer needs to start with its magic number "%PDF" to be parsed.`,
+    The file must be a PDF with parsable text content, with a maximum size of 5MB.`,
   })
   @ApiOkResponse({
     type: PdfParserUploadResultDto,
@@ -101,8 +101,7 @@ export class PdfParserController {
   @ApiOperation({
     summary: 'Return text from PDF file provided by URL',
     description: `This endpoint retrieves the content of a PDF file available through an URL and returns it as text.\n
-    The file must be a searchable PDF, with a maximum size of 5MB.  
-    Its buffer needs to start with its magic number "%PDF" to be parsed.`,
+    The file must be a PDF with parsable text content, with a maximum size of 5MB.`,
   })
   @ApiOkResponse({
     type: PdfParserUrlResultDto,
