@@ -105,13 +105,16 @@ export class JsonService {
     const outputFormat: Analysis = {
       corrections: [
         {
-          field: 'the field in the generated JSON that needs to be corrected',
+          field:
+            'the field in the generated JSON that needs to be corrected, only specify the parent field if the issue is nested',
           issue: 'the issue you identified',
           description:
-            'your description of the issue, give your full reasoning for why it is an issue',
+            'your description of the issue, give your full reasoning for why it is an issue. it should be as detailed as possible',
           suggestion: 'your suggestion for correction',
         },
       ],
+      textAnalysis:
+        'Your detailed and precise analysis, exposing your whole thought process, step by step. Do not provide a corrected JSON output in this field. Generate a readable text in markdown.',
     };
 
     const { output, debugReport } = await this.llmService.generateOutput(

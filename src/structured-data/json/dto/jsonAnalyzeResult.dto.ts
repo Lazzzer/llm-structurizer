@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsObject, IsOptional } from 'class-validator';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { DebugReport } from '../../llm/dto/debug.dto';
 
 export class Analysis {
@@ -8,6 +8,12 @@ export class Analysis {
   })
   @IsArray()
   corrections: Correction[];
+
+  @ApiProperty({
+    description: 'full textual analysis of the issues',
+  })
+  @IsString()
+  textAnalysis: string;
 }
 
 export class Correction {
