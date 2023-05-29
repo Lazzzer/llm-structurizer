@@ -28,6 +28,7 @@ import {
 } from './dto/pdfParserResult.dto';
 import { PdfParserRequestDto } from './dto/pdfParserRequest.dto';
 import { PdfNotParsedError } from './exceptions/exceptions';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 const uploadSchema = {
   type: 'object',
@@ -67,7 +68,12 @@ const pdfPipe = new ParseFilePipeBuilder()
   version: '1',
 })
 export class PdfParserController {
-  constructor(private readonly pdfParserService: PdfParserService) {}
+  constructor(
+    private readonly pdfParserService: PdfParserService,
+    private logger: ISOLogger,
+  ) {
+    this.logger.setContext(PdfParserController.name);
+  }
 
   @ApiOperation({
     summary: 'Return text from uploaded PDF file',
@@ -94,6 +100,7 @@ export class PdfParserController {
         content: text,
       };
     } catch (e) {
+      this.logger.warn('UnprocessableEntityException thrown');
       throw new UnprocessableEntityException(e.message);
     }
   }
@@ -127,8 +134,10 @@ export class PdfParserController {
       };
     } catch (e) {
       if (e instanceof PdfNotParsedError) {
+        this.logger.warn('UnprocessableEntityException thrown');
         throw new UnprocessableEntityException(e.message);
       }
+      this.logger.warn('BadRequestException thrown');
       throw new BadRequestException(e.message);
     }
   }

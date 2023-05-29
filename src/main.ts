@@ -4,9 +4,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { VersioningType, ValidationPipe } from '@nestjs/common';
 import { ApiKeyAuthGuard } from './auth/guard/apiKey-auth.guard';
+import { ISOLogger } from './logger/isoLogger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  // Logging
+  app.useLogger(await app.resolve(ISOLogger));
 
   // Security
   app.useGlobalGuards(new ApiKeyAuthGuard());

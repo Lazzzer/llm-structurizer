@@ -7,13 +7,17 @@ import {
   PdfNotParsedError,
   PdfSizeError,
 } from './exceptions/exceptions';
+import { ISOLogger } from '../../logger/isoLogger.service';
 
 @Injectable()
 export class PdfParserService {
   constructor(
     private configService: ConfigService,
     private httpService: HttpService,
-  ) {}
+    private logger: ISOLogger,
+  ) {
+    this.logger.setContext(PdfParserService.name);
+  }
 
   async parsePdf(file: Buffer) {
     const poppler = new Poppler(this.configService.get('POPPLER_BIN_PATH'));
@@ -23,15 +27,18 @@ export class PdfParserService {
     });
 
     if (output instanceof Error || output.length === 0) {
+      this.logger.warn('PDF not parsed');
       throw new PdfNotParsedError();
     }
 
+    this.logger.debug('PDF parsed successfully');
     return this.postProcessText(output);
   }
 
   async loadPdfFromUrl(url: string) {
     const extension = url.split('.').pop();
     if (extension !== 'pdf') {
+      this.logger.warn('PDF extension not valid');
       throw new PdfExtensionError();
     }
 
@@ -42,6 +49,7 @@ export class PdfParserService {
     });
 
     if (response.headers['content-length'] > 5 * 1024 * 1024) {
+      this.logger.warn('PDF size over 5MB');
       throw new PdfSizeError();
     }
 

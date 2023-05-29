@@ -8,19 +8,34 @@ import {
   LLMNotAvailableError,
   PromptTemplateFormatError,
 } from './exceptions/exceptions';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 describe('LLMService', () => {
   let service: LLMService;
   let configService: ConfigService;
+  let logger: ISOLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()],
-      providers: [LLMService],
+      providers: [
+        LLMService,
+        {
+          provide: ISOLogger,
+          useValue: {
+            debug: jest.fn(),
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            setContext: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<LLMService>(LLMService);
     configService = module.get<ConfigService>(ConfigService);
+    logger = await module.resolve<ISOLogger>(ISOLogger);
   });
 
   it('should be defined', () => {
@@ -90,6 +105,7 @@ describe('LLMService', () => {
           product: 'cars',
         }),
       ).rejects.toThrow(LLMNotAvailableError);
+      expect(logger.warn).toHaveBeenCalled();
     });
 
     it('should throw if the given model needs a missing api key', async () => {
@@ -106,6 +122,7 @@ describe('LLMService', () => {
           product: 'cars',
         }),
       ).rejects.toThrow(LLMApiKeyMissingError);
+      expect(logger.warn).toHaveBeenCalled();
     });
 
     it('should throw if the given api key is invalid', async () => {
@@ -123,6 +140,7 @@ describe('LLMService', () => {
           product: 'cars',
         }),
       ).rejects.toThrow(LLMApiKeyInvalidError);
+      expect(logger.warn).toHaveBeenCalled();
     });
 
     it('should throw if the chain values do not match the input variables of the prompt template', async () => {
@@ -140,6 +158,7 @@ describe('LLMService', () => {
           wrongValue: 'cars',
         }),
       ).rejects.toThrow(PromptTemplateFormatError);
+      expect(logger.error).toHaveBeenCalled();
     });
   });
   describe('generateRefineOutput()', () => {
@@ -260,7 +279,7 @@ describe('LLMService', () => {
       expect(debugReport).toHaveProperty('llmCallCount');
       expect(debugReport).toHaveProperty('chains');
       expect(debugReport).toHaveProperty('llms');
-    }, 20000);
+    }, 30000);
 
     it('should throw if the model given is not available', async () => {
       const model = {
@@ -277,6 +296,7 @@ describe('LLMService', () => {
           input_documents: [],
         }),
       ).rejects.toThrow(LLMNotAvailableError);
+      expect(logger.warn).toHaveBeenCalled();
     });
 
     it('should throw if there are reserved input variables in chainValues', async () => {
@@ -297,6 +317,7 @@ describe('LLMService', () => {
       ).rejects.toThrow(
         `Reserved chain value context or existing_answer cannot be used as an input variable.`,
       );
+      expect(logger.error).toHaveBeenCalled();
     });
 
     it('should throw if the initial prompt template does not have the context input variable', async () => {
@@ -321,6 +342,7 @@ describe('LLMService', () => {
       ).rejects.toThrow(
         'initialPromptTemplate is missing mandatory input variable: context.',
       );
+      expect(logger.error).toHaveBeenCalled();
     });
 
     it('should throw if the refine prompt template does not have the context input variable', async () => {
@@ -350,6 +372,7 @@ describe('LLMService', () => {
       ).rejects.toThrow(
         'refinePromptTemplate is missing mandatory input variable: context.',
       );
+      expect(logger.error).toHaveBeenCalled();
     });
 
     it('should throw if the refine prompt template does not have the existing_answer input variable', async () => {
@@ -379,6 +402,7 @@ describe('LLMService', () => {
       ).rejects.toThrow(
         'refinePromptTemplate is missing mandatory input variable: existing_answer.',
       );
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 });

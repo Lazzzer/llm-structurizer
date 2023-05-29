@@ -18,9 +18,14 @@ import { Document } from 'langchain/document';
 import { Model } from './types/types';
 import { RefineCallbackHandler } from './callbackHandlers/refineHandler';
 import { DebugCallbackHandler } from './callbackHandlers/debugHandler';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 @Injectable()
 export class LLMService {
+  constructor(private logger: ISOLogger) {
+    this.logger.setContext(LLMService.name);
+  }
+
   async generateOutput(
     model: Model,
     promptTemplate: PromptTemplate,
@@ -28,10 +33,14 @@ export class LLMService {
     debug = false,
   ) {
     const llm = this.retrieveAvailableModel(model);
+    this.logger.debug(
+      `Using model ${model.name} ${model.apiKey ? 'with' : 'without'} API key`,
+    );
 
     try {
       await promptTemplate.format(chainValues);
     } catch (e) {
+      this.logger.error("Prompt template doesn't match input variables");
       throw new PromptTemplateFormatError();
     }
 
@@ -44,14 +53,19 @@ export class LLMService {
       const handler = new DebugCallbackHandler();
       const output = await llmChain.call(chainValues, debug ? [handler] : []);
 
+      this.logger.debug(`generateOutput completed successfully`);
+
       return { output, debugReport: debug ? handler.debugReport : null };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
+        this.logger.warn('LLMApiKeyInvalidError thrown');
         throw new LLMApiKeyInvalidError(model.name);
       }
       if (e?.response?.status && e?.response?.status === 400) {
+        this.logger.warn('LLMBadRequestReceivedError thrown');
         throw new LLMBadRequestReceivedError(model.name);
       }
+      this.logger.warn('Undefined error thrown');
       throw e;
     }
   }
@@ -64,8 +78,14 @@ export class LLMService {
     debug = false,
   ) {
     const llm = this.retrieveAvailableModel(model);
+    this.logger.debug(
+      `Using model ${model.name} ${model.apiKey ? 'with' : 'without'} API key`,
+    );
 
     if (chainValues['context'] || chainValues['existing_answer']) {
+      this.logger.error(
+        "Reserved chain values 'context' & 'existing_answer' can't be used",
+      );
       throw new RefineReservedChainValuesError('context or existing_answer');
     }
 
@@ -100,6 +120,9 @@ export class LLMService {
         chainValues,
         debug ? [handler, debugHandler] : [handler],
       );
+
+      this.logger.debug(`generateRefineOutput completed successfully`);
+
       return {
         output,
         llmCallCount: handler.llmCallCount,
@@ -107,11 +130,14 @@ export class LLMService {
       };
     } catch (e) {
       if (e?.response?.status && e?.response?.status === 401) {
+        this.logger.warn('LLMApiKeyInvalidError thrown');
         throw new LLMApiKeyInvalidError(model.name);
       }
       if (e?.response?.status && e?.response?.status === 400) {
+        this.logger.warn('LLMBadRequestReceivedError thrown');
         throw new LLMBadRequestReceivedError(model.name);
       }
+      this.logger.warn('Undefined error thrown');
       throw e;
     }
   }
@@ -126,6 +152,11 @@ export class LLMService {
     });
 
     const output = await splitter.createDocuments([document]);
+
+    this.logger.debug(
+      `splitDocument created ${output.length} documents (chunks size: ${params.chunkSize}, overlap: ${params.overlap})`,
+    );
+
     return output;
   }
 
@@ -135,6 +166,9 @@ export class LLMService {
     inputVariables: string[],
   ) {
     if (!inputVariables.includes(variableName)) {
+      this.logger.error(
+        `Input variable ${variableName} is missing from ${templateName}`,
+      );
       throw new RefinePromptsInputVariablesError(templateName, variableName);
     }
   }
@@ -143,6 +177,7 @@ export class LLMService {
     switch (model.name) {
       case 'gpt-3.5-turbo': {
         if (!model.apiKey) {
+          this.logger.warn('Missing API key for gpt-3.5-turbo model');
           throw new LLMApiKeyMissingError(model.name);
         }
         const llm = new ChatOpenAI({
@@ -157,6 +192,7 @@ export class LLMService {
       }
       case 'gpt-4': {
         if (!model.apiKey) {
+          this.logger.warn('Missing API key for gpt-4 model');
           throw new LLMApiKeyMissingError(model.name);
         }
         const llm = new ChatOpenAI({
@@ -170,6 +206,7 @@ export class LLMService {
         return llm;
       }
       default: {
+        this.logger.warn(`Model ${model.name} was not found`);
         throw new LLMNotAvailableError(model.name);
       }
     }
