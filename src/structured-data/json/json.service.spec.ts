@@ -33,6 +33,7 @@ describe('JsonService', () => {
     service = module.get<JsonService>(JsonService);
     llmService = module.get<LLMService>(LLMService);
     configService = module.get<ConfigService>(ConfigService);
+    logger = await module.resolve<ISOLogger>(ISOLogger);
   });
 
   it('should be defined', () => {
@@ -68,6 +69,7 @@ describe('JsonService', () => {
       await expect(
         service.extractWithSchema(model, text, schema),
       ).rejects.toThrow(InvalidJsonOutputError);
+      expect(logger.warn).toHaveBeenCalled();
     });
   });
   describe('extractWithExample()', () => {
@@ -105,6 +107,7 @@ describe('JsonService', () => {
       await expect(
         service.extractWithExample(model, text, example),
       ).rejects.toThrow(InvalidJsonOutputError);
+      expect(logger.warn).toHaveBeenCalled();
     });
   });
   describe('analyzeJsonOutput()', () => {
@@ -154,6 +157,7 @@ describe('JsonService', () => {
           schema,
         ),
       ).rejects.toThrow(InvalidJsonOutputError);
+      expect(logger.warn).toHaveBeenCalled();
     });
   });
 });

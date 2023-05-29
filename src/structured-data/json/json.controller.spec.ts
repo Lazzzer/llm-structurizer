@@ -39,6 +39,7 @@ describe('JsonController', () => {
     controller = module.get<JsonController>(JsonController);
     service = module.get<JsonService>(JsonService);
     configService = module.get<ConfigService>(ConfigService);
+    logger = await module.resolve<ISOLogger>(ISOLogger);
   });
 
   it('should be defined', () => {
@@ -120,6 +121,7 @@ describe('JsonController', () => {
         jsonSchema: schema,
       }),
     ).rejects.toThrow(UnprocessableEntityException);
+    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('should throw a BadRequestException if the given api key is missing', async () => {
@@ -135,6 +137,7 @@ describe('JsonController', () => {
         jsonSchema: schema,
       }),
     ).rejects.toThrow(BadRequestException);
+    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('should throw a BadRequestException if the given api key is invalid', async () => {
@@ -151,5 +154,6 @@ describe('JsonController', () => {
         jsonSchema: schema,
       }),
     ).rejects.toThrow(BadRequestException);
+    expect(logger.warn).toHaveBeenCalled();
   });
 });
