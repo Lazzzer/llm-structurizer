@@ -6,7 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { ParsersModule } from './parsers/parsers.module';
 import { StructuredDataModule } from './structured-data/structured-data.module';
 import configuration from './config/configuration';
-import { LoggerMiddleware } from './middleware/logger.middleware';
+import { LoggerMiddleware } from './logger/logger.middleware';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
     }),
     AuthModule,
     ParsersModule,
+    LoggerModule,
     StructuredDataModule,
   ],
 })

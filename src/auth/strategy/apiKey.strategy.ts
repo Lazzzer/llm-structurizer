@@ -2,12 +2,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
 import { AuthService } from '../auth.service';
+import { ISOLogger } from '../../logger/isoLogger.service';
 @Injectable()
 export class ApiKeyStrategy extends PassportStrategy(
   HeaderAPIKeyStrategy,
   'api-key',
 ) {
-  constructor(private authService: AuthService) {
+  constructor(private authService: AuthService, private logger: ISOLogger) {
+    logger.setContext(ApiKeyStrategy.name);
     super(
       { header: 'X-API-KEY', prefix: '' },
       true,
@@ -16,9 +18,13 @@ export class ApiKeyStrategy extends PassportStrategy(
         done: (err: Error | unknown, verified?: boolean) => void,
       ) => {
         const isValidApiKey = await this.authService.validateApiKey(apiKey);
-        return isValidApiKey
-          ? done(null, true)
-          : done(new UnauthorizedException(), false);
+
+        if (isValidApiKey) {
+          return done(null, true);
+        } else {
+          this.logger.warn('invalid API key');
+          return done(new UnauthorizedException(), false);
+        }
       },
     );
   }

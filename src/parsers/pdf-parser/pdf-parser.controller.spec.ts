@@ -7,20 +7,33 @@ import {
   BadRequestException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { ISOLogger } from '../../logger/isoLogger.service';
 
 describe('PdfParserController', () => {
   let controller: PdfParserController;
   let service: PdfParserService;
+  let logger: ISOLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PdfParserController],
-      providers: [PdfParserService],
+      providers: [
+        PdfParserService,
+        {
+          provide: ISOLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            setContext: jest.fn(),
+          },
+        },
+      ],
       imports: [ConfigModule.forRoot(), HttpModule],
     }).compile();
 
     controller = module.get<PdfParserController>(PdfParserController);
     service = module.get<PdfParserService>(PdfParserService);
+    logger = await module.resolve<ISOLogger>(ISOLogger);
   });
 
   it('should be defined', () => {
