@@ -10,6 +10,7 @@ import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { Analysis } from './dto/jsonAnalyzeResult.dto';
 import { Model } from '../llm/types/types';
 import { RefineParams } from './types/types';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 @Injectable()
 export class JsonService {
@@ -18,7 +19,9 @@ export class JsonService {
     overlap: 100,
   };
 
-  constructor(private llmService: LLMService) {}
+  constructor(private llmService: LLMService, private logger: ISOLogger) {
+    this.logger.setContext(JsonService.name);
+  }
 
   async extractWithSchema(
     model: Model,
@@ -37,8 +40,10 @@ export class JsonService {
     );
     try {
       const json: object = JSON.parse(output.text);
+      this.logger.debug('extractWithSchema: json parsed successfully');
       return { json, debugReport };
     } catch (e) {
+      this.logger.warn('extractWithSchema: json parsing failed');
       throw new InvalidJsonOutputError();
     }
   }
@@ -65,8 +70,10 @@ export class JsonService {
       );
     try {
       const json: object = JSON.parse(output.output_text);
+      this.logger.debug('extractWithSchemaAndRefine: json parsed successfully');
       return { json, refineRecap: { ...params, llmCallCount }, debugReport };
     } catch (e) {
+      this.logger.warn('extractWithSchemaAndRefine: json parsing failed');
       throw new InvalidJsonOutputError();
     }
   }
@@ -89,8 +96,10 @@ export class JsonService {
     );
     try {
       const json = JSON.parse(output.text);
+      this.logger.debug('extractWithExample: json parsed successfully');
       return { json, debugReport };
     } catch (e) {
+      this.logger.warn('extractWithExample: json parsing failed');
       throw new InvalidJsonOutputError();
     }
   }
@@ -140,11 +149,14 @@ export class JsonService {
             typeof correction.suggestion === 'string',
         )
       ) {
+        this.logger.debug('analyzeJsonOutput: json parsed successfully');
         return { json, debugReport };
       } else {
+        this.logger.warn('analyzeJsonOutput: json parsing failed');
         throw new InvalidJsonOutputError();
       }
     } catch (e) {
+      this.logger.warn('analyzeJsonOutput: json parsing failed');
       throw new InvalidJsonOutputError();
     }
   }

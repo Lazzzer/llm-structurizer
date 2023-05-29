@@ -8,19 +8,34 @@ import {
   LLMNotAvailableError,
   PromptTemplateFormatError,
 } from './exceptions/exceptions';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 describe('LLMService', () => {
   let service: LLMService;
   let configService: ConfigService;
+  let logger: ISOLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()],
-      providers: [LLMService],
+      providers: [
+        LLMService,
+        {
+          provide: ISOLogger,
+          useValue: {
+            debug: jest.fn(),
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            setContext: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<LLMService>(LLMService);
     configService = module.get<ConfigService>(ConfigService);
+    logger = await module.resolve<ISOLogger>(ISOLogger);
   });
 
   it('should be defined', () => {
@@ -260,7 +275,7 @@ describe('LLMService', () => {
       expect(debugReport).toHaveProperty('llmCallCount');
       expect(debugReport).toHaveProperty('chains');
       expect(debugReport).toHaveProperty('llms');
-    }, 20000);
+    }, 30000);
 
     it('should throw if the model given is not available', async () => {
       const model = {

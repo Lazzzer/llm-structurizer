@@ -8,16 +8,31 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 describe('JsonController', () => {
   let controller: JsonController;
   let service: JsonService;
   let configService: ConfigService;
+  let logger: ISOLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [JsonController],
-      providers: [JsonService, LLMService],
+      providers: [
+        JsonService,
+        LLMService,
+        {
+          provide: ISOLogger,
+          useValue: {
+            debug: jest.fn(),
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            setContext: jest.fn(),
+          },
+        },
+      ],
       imports: [ConfigModule.forRoot()],
     }).compile();
 

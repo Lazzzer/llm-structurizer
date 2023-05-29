@@ -3,16 +3,31 @@ import { JsonService } from './json.service';
 import { LLMService } from '../llm/llm.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
+import { ISOLogger } from '@/logger/isoLogger.service';
 
 describe('JsonService', () => {
   let service: JsonService;
   let llmService: LLMService;
   let configService: ConfigService;
+  let logger: ISOLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()],
-      providers: [JsonService, LLMService],
+      providers: [
+        JsonService,
+        LLMService,
+        {
+          provide: ISOLogger,
+          useValue: {
+            debug: jest.fn(),
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            setContext: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<JsonService>(JsonService);
