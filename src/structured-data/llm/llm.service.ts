@@ -181,7 +181,6 @@ export class LLMService {
           throw new LLMApiKeyMissingError(model.name);
         }
         const llm = new ChatOpenAI({
-          cache: true,
           maxConcurrency: 10,
           maxRetries: 3,
           modelName: 'gpt-3.5-turbo',
@@ -196,7 +195,6 @@ export class LLMService {
           throw new LLMApiKeyMissingError(model.name);
         }
         const llm = new ChatOpenAI({
-          cache: true,
           maxConcurrency: 10,
           maxRetries: 3,
           modelName: 'gpt-4',
