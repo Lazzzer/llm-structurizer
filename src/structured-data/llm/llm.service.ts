@@ -175,29 +175,17 @@ export class LLMService {
 
   private retrieveAvailableModel(model: Model): BaseLanguageModel {
     switch (model.name) {
-      case 'gpt-3.5-turbo': {
-        if (!model.apiKey) {
-          this.logger.warn('Missing API key for gpt-3.5-turbo model');
-          throw new LLMApiKeyMissingError(model.name);
-        }
-        const llm = new ChatOpenAI({
-          maxConcurrency: 10,
-          maxRetries: 3,
-          modelName: 'gpt-3.5-turbo',
-          openAIApiKey: model.apiKey,
-          temperature: 0,
-        });
-        return llm;
-      }
+      case 'gpt-3.5-turbo':
+      case 'gpt-3.5-turbo-16k':
       case 'gpt-4': {
         if (!model.apiKey) {
-          this.logger.warn('Missing API key for gpt-4 model');
+          this.logger.warn(`Missing API key for ${model.name} model`);
           throw new LLMApiKeyMissingError(model.name);
         }
         const llm = new ChatOpenAI({
           maxConcurrency: 10,
           maxRetries: 3,
-          modelName: 'gpt-4',
+          modelName: model.name,
           openAIApiKey: model.apiKey,
           temperature: 0,
         });
