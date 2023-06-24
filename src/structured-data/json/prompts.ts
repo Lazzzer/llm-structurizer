@@ -87,6 +87,27 @@ Please output your analysis in the following json format:
 Your analysis:
 `;
 
+const jsonClassificationTemplate = `
+Given a list of possible categories and the text to classify, use your capabilities to determine the most fitting category for the provided text. 
+If the category cannot be determined with high confidence, classify the text as "other".
+The categories you may choose from are STRICTLY limited to the given list.
+---------------------
+List of possible categories with their descriptions:
+{categories}
+---------------------
+Text to classify:
+{text}
+---------------------
+
+For your output, provide a JSON object that contains the 'classification' field representing the determined category and the 'confidence' field indicating the confidence level of the classification.
+
+Please provide your output in the following format:
+
+{outputFormat}
+
+Your Classification:
+`;
+
 // ##### Prompt Templates #####
 
 export const jsonZeroShotSchemaExtraction = new PromptTemplate({
@@ -107,4 +128,9 @@ export const jsonOneShotExtraction = new PromptTemplate({
 export const jsonAnalysis = new PromptTemplate({
   inputVariables: ['jsonSchema', 'originalText', 'jsonOutput', 'outputFormat'],
   template: jsonAnalysisTemplate,
+});
+
+export const jsonClassification = new PromptTemplate({
+  inputVariables: ['categories', 'text', 'outputFormat'],
+  template: jsonClassificationTemplate,
 });

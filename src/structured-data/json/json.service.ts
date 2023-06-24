@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { LLMService } from '../llm/llm.service';
 import {
   jsonAnalysis,
+  jsonClassification,
   jsonOneShotExtraction,
   jsonZeroShotSchemaExtraction,
   jsonZeroShotSchemaExtractionRefine,
@@ -11,6 +12,7 @@ import { Analysis } from './dto/jsonAnalyzeResult.dto';
 import { Model } from '../llm/types/types';
 import { RefineParams } from './types/types';
 import { ISOLogger } from '@/logger/isoLogger.service';
+import { Classification } from './dto/jsonClassificationResult.dto';
 
 @Injectable()
 export class JsonService {
@@ -157,6 +159,43 @@ export class JsonService {
       }
     } catch (e) {
       this.logger.warn('analyzeJsonOutput: json parsing failed');
+      throw new InvalidJsonOutputError();
+    }
+  }
+
+  async classifyText(
+    model: Model,
+    text: string,
+    categories: string[],
+    debug = false,
+  ) {
+    const outputFormat = {
+      classification: 'classification of the text',
+      confidence:
+        'number representing your confidence of the classification in percentage. display only the number, not the percentage sign',
+    };
+
+    const { output, debugReport } = await this.llmService.generateOutput(
+      model,
+      jsonClassification,
+      {
+        categories,
+        text,
+        outputFormat: JSON.stringify(outputFormat),
+      },
+      debug,
+    );
+    try {
+      const json: Classification = JSON.parse(output.text);
+      if (json.classification && json.confidence) {
+        this.logger.debug('classifyText: json parsed successfully');
+        return { json, debugReport };
+      } else {
+        this.logger.warn('classifyText: json parsing failed');
+        throw new InvalidJsonOutputError();
+      }
+    } catch (e) {
+      this.logger.warn('classifyText: json parsing failed');
       throw new InvalidJsonOutputError();
     }
   }
