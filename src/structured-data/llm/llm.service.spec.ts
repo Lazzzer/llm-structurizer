@@ -203,8 +203,6 @@ describe('LLMService', () => {
         inputVariables: ['existing_answer', 'context'],
       });
 
-      console.log(documents);
-
       const { output, llmCallCount, debugReport } =
         await service.generateRefineOutput(
           model,
