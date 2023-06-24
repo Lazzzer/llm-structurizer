@@ -172,7 +172,7 @@ describe('LLMService', () => {
         This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
         `;
       const documents = await service.splitDocument(text, {
-        chunkSize: 100,
+        chunkSize: 120,
         overlap: 0,
       });
       const initialPromptTemplate = new PromptTemplate({
@@ -229,7 +229,7 @@ describe('LLMService', () => {
         This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
         `;
       const documents = await service.splitDocument(text, {
-        chunkSize: 100,
+        chunkSize: 120,
         overlap: 0,
       });
       const initialPromptTemplate = new PromptTemplate({

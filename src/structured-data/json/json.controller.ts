@@ -32,6 +32,8 @@ import {
   LLMBadRequestReceivedError,
 } from '../llm/exceptions/exceptions';
 import { ISOLogger } from '@/logger/isoLogger.service';
+import { JsonClassificationResultDto } from './dto/jsonClassificationResult.dto';
+import { JsonClassificationRequestDto } from './dto/jsonClassificationRequest.dto';
 
 @ApiUnauthorizedResponse({
   description: "The API key in request's header is missing or invalid.",
@@ -61,7 +63,7 @@ export class JsonController {
     description: `This endpoint returns structured data from input text as json.  
     It accepts a json schema as model for data extraction. The Refine technique can be used for longer texts.\n
 
-    Available models: gpt-3.5-turbo, gpt-4
+    Available models: gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -142,7 +144,7 @@ export class JsonController {
     It accepts a fully featured example with a given input text and a desired output json which will be used for data extraction.
     If chunking is needed, the zero-shot variant with a schema is better suited for the task.\n
 
-    Available models: gpt-3.5-turbo, gpt-4
+    Available models: gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -197,7 +199,7 @@ export class JsonController {
     description: `This endpoint returns an analysis of a generated json output by comparing it to the original text and its json schema.  
     It accepts the json output to analyze, the original text and the json schema used for data extraction.\n
 
-    Available models: gpt-3.5-turbo, gpt-4
+    Available models: gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-4
     `,
   })
   @ApiOkResponse({
@@ -228,6 +230,48 @@ export class JsonController {
         debug: debugReport ? debugReport : undefined,
       };
       this.logger.debug('Request for analysis processed successfully');
+      return response;
+    } catch (e) {
+      if (e instanceof InvalidJsonOutputError) {
+        this.logger.warn('UnprocessableEntityException thrown');
+        throw new UnprocessableEntityException(e.message);
+      }
+      this.logger.error('InternalServerErrorException thrown');
+      throw new InternalServerErrorException(e.message);
+    }
+  }
+
+  @ApiOperation({
+    summary:
+      'Return a classification of the given text from a list of possible categories',
+    description: `This endpoint returns a classification of a text from a list of possible categories. 
+    It accepts the text to classify and a list of categories with their descriptions.\n
+
+    Available models: gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-4
+    `,
+  })
+  @ApiOkResponse({
+    type: JsonClassificationResultDto,
+    description: 'The classification is successfully returned.',
+  })
+  @ApiBody({
+    type: JsonClassificationRequestDto,
+    description:
+      'Request body containing the text to classify and a list of categories with their descriptions',
+  })
+  @HttpCode(200)
+  @Post('classification')
+  async classifyText(@Body() request: JsonClassificationRequestDto) {
+    const { model, categories, debug, text } = request;
+    try {
+      const { json: classification, debugReport } =
+        await this.jsonService.classifyText(model, text, categories, debug);
+      const response: JsonClassificationResultDto = {
+        model: model.name,
+        classification,
+        debug: debugReport ? debugReport : undefined,
+      };
+      this.logger.debug('Request for classification processed successfully');
       return response;
     } catch (e) {
       if (e instanceof InvalidJsonOutputError) {

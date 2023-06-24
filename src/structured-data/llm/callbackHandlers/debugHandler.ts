@@ -1,6 +1,7 @@
 import { BaseCallbackHandler } from 'langchain/callbacks';
 import { ChainValues, LLMResult } from 'langchain/schema';
 import { ChainCall, DebugReport, LlmCall } from '../dto/debug.dto';
+import { Serialized } from 'langchain/load/serializable';
 
 export class DebugCallbackHandler extends BaseCallbackHandler {
   name = 'DebugCallbackHandler';
@@ -14,12 +15,12 @@ export class DebugCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleChainStart(
-    chain: { name: string },
+    chain: Serialized,
     inputs: ChainValues,
     runId: string,
   ): Promise<void> {
     const startedChain: ChainCall = {
-      chainName: chain.name,
+      chainName: chain.id.at(-1),
       runId,
       start: {
         inputs,
@@ -56,13 +57,13 @@ export class DebugCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleLLMStart(
-    llm: { name: string },
+    llm: Serialized,
     prompts: string[],
     runId: string,
     parentRunId?: string,
   ): Promise<void> {
     const startedLlmCall: LlmCall = {
-      llmName: llm.name,
+      llmName: llm.id.at(-1),
       parentRunId,
       runId,
       start: {
