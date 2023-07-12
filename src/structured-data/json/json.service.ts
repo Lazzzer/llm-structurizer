@@ -13,6 +13,7 @@ import { Model } from '../llm/types/types';
 import { RefineParams } from './types/types';
 import { ISOLogger } from '@/logger/isoLogger.service';
 import { Classification } from './dto/jsonClassificationResult.dto';
+import { PromptTemplate } from 'langchain/prompts';
 
 @Injectable()
 export class JsonService {
@@ -125,7 +126,7 @@ export class JsonService {
         },
       ],
       textAnalysis:
-        'Your detailed and precise analysis, exposing your whole thought process, step by step. Do not provide a corrected JSON output in this field. Generate a readable text in markdown.',
+        'Your detailed and precise analysis, exposing your whole thought process, step by step. Do not provide a corrected JSON output in this field. The text should be formatted as a list of paragraphs, each paragraph separated by two newlines. Use the markdown syntax for the lists.',
     };
 
     const { output, debugReport } = await this.llmService.generateOutput(
@@ -198,5 +199,24 @@ export class JsonService {
       this.logger.warn('classifyText: json parsing failed');
       throw new InvalidJsonOutputError();
     }
+  }
+
+  async handleGenericPrompt(model: Model, prompt: string, debug = false) {
+    const { output, debugReport } = await this.llmService.generateOutput(
+      model,
+      new PromptTemplate({
+        inputVariables: ['prompt'],
+        template: '{prompt}',
+      }),
+      {
+        prompt,
+      },
+      debug,
+    );
+    const json = {
+      output: output.text,
+    };
+    this.logger.debug('handleGenericPrompt: json generated successfully');
+    return { json, debugReport };
   }
 }

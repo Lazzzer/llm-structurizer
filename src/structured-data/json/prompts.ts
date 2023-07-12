@@ -88,9 +88,11 @@ Your analysis:
 `;
 
 const jsonClassificationTemplate = `
+You are a highly efficient text processing application.
+
 Given a list of possible categories and the text to classify, use your capabilities to determine the most fitting category for the provided text. 
 If the category cannot be determined with high confidence, classify the text as "other".
-The categories you may choose from are STRICTLY limited to the given list.
+The categories you may choose from are STRICTLY limited to the given list. You MUST only choose one category.
 ---------------------
 List of possible categories with their descriptions:
 {categories}

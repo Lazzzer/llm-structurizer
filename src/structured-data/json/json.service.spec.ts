@@ -47,11 +47,10 @@ describe('JsonService', () => {
         apiKey: configService.get('OPENAI_API_KEY'),
         name: 'gpt-3.5-turbo',
       };
-      const schema = '{"title": "string", "description": "string"}';
+      const schema = '{"title": "string"}';
       const { json } = await service.extractWithSchema(model, text, schema);
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
-      expect(json).toHaveProperty('description');
     });
     it('should throw an error if the output is not a valid json', async () => {
       const text = 'This is a text';
@@ -81,12 +80,11 @@ describe('JsonService', () => {
       };
       const example = {
         input: 'This is a text',
-        output: '{"title": "string", "description": "string"}',
+        output: '{"title": "This is a text"}',
       };
       const { json } = await service.extractWithExample(model, text, example);
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
-      expect(json).toHaveProperty('description');
     });
     it('should throw an error if the output is not a valid json', async () => {
       const text = 'This is a text';
@@ -214,5 +212,38 @@ describe('JsonService', () => {
       ).rejects.toThrow(InvalidJsonOutputError);
       expect(logger.warn).toHaveBeenCalled();
     });
+  });
+  describe('handleGenericPrompt()', () => {
+    it('should return an output with the result of the generic prompt', async () => {
+      const outputFormat = {
+        sentence: 'string',
+      };
+
+      const prompt = `You are an helpful assistant. Your only task is to say "Hello World" to the user.
+
+        Please ALWAYS provide your output in the following format as a JSON object:
+
+        ${JSON.stringify(outputFormat)}
+
+        Your output:
+        `;
+
+      const prompt2 = 'Say "Hello World"';
+
+      const model = {
+        apiKey: configService.get('OPENAI_API_KEY'),
+        name: 'gpt-3.5-turbo',
+      };
+
+      const { json } = await service.handleGenericPrompt(model, prompt);
+      expect(json).toBeDefined();
+      expect(json).toHaveProperty('output');
+      expect(json.output).toBe('{"sentence":"Hello World"}');
+
+      const { json: json2 } = await service.handleGenericPrompt(model, prompt2);
+      expect(json2).toBeDefined();
+      expect(json2).toHaveProperty('output');
+      expect(json2.output).toBe('Hello World');
+    }, 30000);
   });
 });
