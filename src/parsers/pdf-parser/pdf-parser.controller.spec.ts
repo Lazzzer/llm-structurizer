@@ -63,7 +63,6 @@ describe('PdfParserController', () => {
       content: text,
     };
 
-    // The parsePdf method is mocked because the "uploaded" mockFile is not a valid PDF file.
     jest.spyOn(service, 'parsePdf').mockImplementation(async () => parseResult);
     expect(await controller.parsePdfFromUpload(mockFile)).toEqual(
       responseResult,
