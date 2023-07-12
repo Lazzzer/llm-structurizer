@@ -109,34 +109,21 @@ export class JsonController {
           jsonSchema,
           debug,
         );
+
         const response: JsonExtractResultDto = {
           model: model.name,
           refine: false,
           output: JSON.stringify(json),
           debug: debug ? debugReport : undefined,
         };
+
         this.logger.debug(
           'Request for json extraction with schema processed successfully',
         );
         return response;
       }
     } catch (e) {
-      if (
-        e instanceof InvalidJsonOutputError ||
-        e instanceof LLMBadRequestReceivedError
-      ) {
-        this.logger.warn('UnprocessableEntityException thrown');
-        throw new UnprocessableEntityException(e.message);
-      }
-      if (
-        e instanceof LLMApiKeyMissingError ||
-        e instanceof LLMApiKeyInvalidError
-      ) {
-        this.logger.warn('BadRequestException thrown');
-        throw new BadRequestException(e.message);
-      }
-      this.logger.error('InternalServerErrorException thrown');
-      throw new InternalServerErrorException(e.message);
+      this.handleError(e);
     }
   }
 
@@ -174,25 +161,20 @@ export class JsonController {
         },
         debug,
       );
+
       const response: JsonExtractResultDto = {
         model: model.name,
         refine: false,
         output: JSON.stringify(json),
         debug: debug ? debugReport : undefined,
       };
+
       this.logger.debug(
         'Request for json extraction with example processed successfully',
       );
       return response;
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
-        this.logger.warn(
-          `UnprocessableEntityException thrown due to error : ${e.name}`,
-        );
-        throw new UnprocessableEntityException(e.message);
-      }
-      this.logger.error('InternalServerErrorException thrown');
-      throw new InternalServerErrorException(e.message);
+      this.handleError(e);
     }
   }
 
@@ -227,20 +209,17 @@ export class JsonController {
           jsonSchema,
           debug,
         );
+
       const response: JsonAnalyzeResultDto = {
         model: model.name,
         analysis,
         debug: debugReport ? debugReport : undefined,
       };
+
       this.logger.debug('Request for analysis processed successfully');
       return response;
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
-        this.logger.warn('UnprocessableEntityException thrown');
-        throw new UnprocessableEntityException(e.message);
-      }
-      this.logger.error('InternalServerErrorException thrown');
-      throw new InternalServerErrorException(e.message);
+      this.handleError(e);
     }
   }
 
@@ -269,20 +248,17 @@ export class JsonController {
     try {
       const { json: classification, debugReport } =
         await this.jsonService.classifyText(model, text, categories, debug);
+
       const response: JsonClassificationResultDto = {
         model: model.name,
         classification,
         debug: debugReport ? debugReport : undefined,
       };
+
       this.logger.debug('Request for classification processed successfully');
       return response;
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
-        this.logger.warn('UnprocessableEntityException thrown');
-        throw new UnprocessableEntityException(e.message);
-      }
-      this.logger.error('InternalServerErrorException thrown');
-      throw new InternalServerErrorException(e.message);
+      this.handleError(e);
     }
   }
 
@@ -313,20 +289,48 @@ export class JsonController {
         prompt,
         debug,
       );
+
       const response: JsonGenericOutputResultDto = {
         model: model.name,
         output: json.output,
         debug: debugReport ? debugReport : undefined,
       };
+
       this.logger.debug('Request for generic output processed successfully');
       return response;
     } catch (e) {
-      if (e instanceof InvalidJsonOutputError) {
-        this.logger.warn('UnprocessableEntityException thrown');
-        throw new UnprocessableEntityException(e.message);
-      }
-      this.logger.error('InternalServerErrorException thrown');
-      throw new InternalServerErrorException(e.message);
+      this.handleError(e);
     }
+  }
+
+  private handleError(e: Error): never {
+    type ExceptionType = new (...args: any[]) => Error;
+    type HandlerFunction = () => never;
+
+    const exceptionMap: Map<ExceptionType[], HandlerFunction> = new Map([
+      [
+        [InvalidJsonOutputError, LLMBadRequestReceivedError],
+        () => {
+          this.logger.warn('UnprocessableEntityException thrown');
+          throw new UnprocessableEntityException(e.message);
+        },
+      ],
+      [
+        [LLMApiKeyMissingError, LLMApiKeyInvalidError],
+        () => {
+          this.logger.warn('BadRequestException thrown');
+          throw new BadRequestException(e.message);
+        },
+      ],
+    ]);
+
+    for (const [exceptions, handler] of exceptionMap) {
+      if (exceptions.some((exception) => e instanceof exception)) {
+        return handler();
+      }
+    }
+
+    this.logger.error('InternalServerErrorException thrown');
+    throw new InternalServerErrorException(e.message);
   }
 }
