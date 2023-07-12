@@ -14,6 +14,10 @@ describe('LLMService', () => {
   let service: LLMService;
   let configService: ConfigService;
   let logger: ISOLogger;
+  let model: {
+    apiKey: string;
+    name: string;
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +40,11 @@ describe('LLMService', () => {
     service = module.get<LLMService>(LLMService);
     configService = module.get<ConfigService>(ConfigService);
     logger = await module.resolve<ISOLogger>(ISOLogger);
+
+    model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
   });
 
   it('should be defined', () => {
@@ -43,16 +52,12 @@ describe('LLMService', () => {
   });
 
   describe('generateOutput()', () => {
-    it('should generate an output', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
+    const promptTemplate = new PromptTemplate({
+      template: 'What is a good name for a company that makes {product}?',
+      inputVariables: ['product'],
+    });
 
+    it('should generate an output', async () => {
       const { output, debugReport } = await service.generateOutput(
         model,
         promptTemplate,
@@ -61,19 +66,12 @@ describe('LLMService', () => {
         },
       );
       expect(output).toBeDefined();
+      expect(output).toHaveProperty('text');
+      expect(output.text).toBeTruthy();
       expect(debugReport).toBeNull();
-    }, 10000);
+    }, 30000);
 
     it('should generate an output with a debug report', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
-
       const { output, debugReport } = await service.generateOutput(
         model,
         promptTemplate,
@@ -82,23 +80,23 @@ describe('LLMService', () => {
         },
         true,
       );
+
       expect(output).toBeDefined();
+      expect(output).toHaveProperty('text');
+      expect(output.text).toBeTruthy();
+
       expect(debugReport).toBeDefined();
       expect(debugReport).toHaveProperty('chainCallCount');
       expect(debugReport).toHaveProperty('llmCallCount');
       expect(debugReport).toHaveProperty('chains');
       expect(debugReport).toHaveProperty('llms');
-    }, 10000);
+    }, 30000);
 
     it('should throw if the given model is not available', async () => {
       const model = {
         apiKey: configService.get('OPENAI_API_KEY'),
         name: 'gpt-42',
       };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
 
       await expect(
         service.generateOutput(model, promptTemplate, {
@@ -112,10 +110,6 @@ describe('LLMService', () => {
       const model = {
         name: 'gpt-3.5-turbo',
       };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
 
       await expect(
         service.generateOutput(model, promptTemplate, {
@@ -130,10 +124,6 @@ describe('LLMService', () => {
         apiKey: 'invalid',
         name: 'gpt-3.5-turbo',
       };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
 
       await expect(
         service.generateOutput(model, promptTemplate, {
@@ -144,15 +134,6 @@ describe('LLMService', () => {
     });
 
     it('should throw if the chain values do not match the input variables of the prompt template', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const promptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
-
       await expect(
         service.generateOutput(model, promptTemplate, {
           wrongValue: 'cars',
@@ -161,32 +142,23 @@ describe('LLMService', () => {
       expect(logger.error).toHaveBeenCalled();
     });
   });
+
   describe('generateRefineOutput()', () => {
-    it('should generate the correct output from a chunked document', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const text = `
+    const text = `
         This is the first sentence of the testing text.\n
         This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
         `;
-      const documents = await service.splitDocument(text, {
-        chunkSize: 120,
-        overlap: 0,
-      });
-      const initialPromptTemplate = new PromptTemplate({
-        template: `Given the following text, please write the value to output.
+    const initialPromptTemplate = new PromptTemplate({
+      template: `Given the following text, please write the value to output.
         ---------------------
         {context}
         ---------------------
         Output:
         `,
-        inputVariables: ['context'],
-      });
-
-      const refinePromptTemplate = new PromptTemplate({
-        template: `
+      inputVariables: ['context'],
+    });
+    const refinePromptTemplate = new PromptTemplate({
+      template: `
         Given the following text, please only write the tagged value to output.
         ---------------------
         You have provided an existing output: 
@@ -200,7 +172,17 @@ describe('LLMService', () => {
         Given the new context, refine the original output to give a better answer. 
         If the context isn't useful, return the existing output.
         `,
-        inputVariables: ['existing_answer', 'context'],
+      inputVariables: ['existing_answer', 'context'],
+    });
+    const dummyPrompt = new PromptTemplate({
+      template: 'What is a good name for a company that makes {product}?',
+      inputVariables: ['product'],
+    });
+
+    it('should generate the correct output from a chunked document', async () => {
+      const documents = await service.splitDocument(text, {
+        chunkSize: 120,
+        overlap: 0,
       });
 
       const { output, llmCallCount, debugReport } =
@@ -217,47 +199,12 @@ describe('LLMService', () => {
       expect(output['output_text']).toContain('llm-structurizer');
       expect(llmCallCount).toBe(2);
       expect(debugReport).toBeNull();
-    }, 20000);
+    }, 30000);
 
     it('should generate the correct output from a chunked document with a debug report', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const text = `
-        This is the first sentence of the testing text.\n
-        This is the second sentence of the testing text. It contains the tagged value to output: llm-structurizer
-        `;
       const documents = await service.splitDocument(text, {
         chunkSize: 120,
         overlap: 0,
-      });
-      const initialPromptTemplate = new PromptTemplate({
-        template: `Given the following text, please write the value to output.
-        ---------------------
-        {context}
-        ---------------------
-        Output:
-        `,
-        inputVariables: ['context'],
-      });
-
-      const refinePromptTemplate = new PromptTemplate({
-        template: `
-        Given the following text, please only write the tagged value to output.
-        ---------------------
-        You have provided an existing output: 
-        {existing_answer}
-
-        We have the opportunity to refine the existing output (only if needed) with some more context below.
-        ---------------------
-        Context:
-        {context}
-        ---------------------
-        Given the new context, refine the original output to give a better answer. 
-        If the context isn't useful, return the existing output.
-        `,
-        inputVariables: ['existing_answer', 'context'],
       });
 
       const { output, llmCallCount, debugReport } =
@@ -286,10 +233,6 @@ describe('LLMService', () => {
         apiKey: configService.get('OPENAI_API_KEY'),
         name: 'gpt-42',
       };
-      const dummyPrompt = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
 
       await expect(
         service.generateRefineOutput(model, dummyPrompt, dummyPrompt, {
@@ -300,15 +243,6 @@ describe('LLMService', () => {
     });
 
     it('should throw if there are reserved input variables in chainValues', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const dummyPrompt = new PromptTemplate({
-        template: 'What is a good name for a company that makes {product}?',
-        inputVariables: ['product'],
-      });
-
       await expect(
         service.generateRefineOutput(model, dummyPrompt, dummyPrompt, {
           context: 'Not allowed',
@@ -321,10 +255,6 @@ describe('LLMService', () => {
     });
 
     it('should throw if the initial prompt template does not have the context input variable', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
       const initialPromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -346,15 +276,6 @@ describe('LLMService', () => {
     });
 
     it('should throw if the refine prompt template does not have the context input variable', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const initialPromptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {context}?',
-        inputVariables: ['context'],
-      });
-
       const refinePromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {product}?',
         inputVariables: ['product'],
@@ -376,15 +297,6 @@ describe('LLMService', () => {
     });
 
     it('should throw if the refine prompt template does not have the existing_answer input variable', async () => {
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const initialPromptTemplate = new PromptTemplate({
-        template: 'What is a good name for a company that makes {context}?',
-        inputVariables: ['context'],
-      });
-
       const refinePromptTemplate = new PromptTemplate({
         template: 'What is a good name for a company that makes {context}?',
         inputVariables: ['context'],
