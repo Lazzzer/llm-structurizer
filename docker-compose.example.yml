@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    container_name: llm-structurizer-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: llm-structurizer
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  app:
+    build:
+      context: .
+      target: production
+    container_name: llm-structurizer-app
+    restart: always
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: 'debug, verbose' # Or 'log, warn, error'
+      DATABASE_URL: postgresql://postgres:root@llm-structurizer-db:5432/llm-structurizer?schema=public&connect_timeout=300
+      POPPLER_BIN_PATH: /usr/bin
+      OPENAI_API_KEY: #### YOUR OPENAI API KEY HERE ####
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+volumes:
+  db_data:
+    name: llm-structurizer-data
