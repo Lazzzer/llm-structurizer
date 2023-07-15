@@ -126,7 +126,7 @@ export class JsonService {
         },
       ],
       textAnalysis:
-        'Your detailed and precise analysis, exposing your whole thought process, step by step. Do not provide a corrected JSON output in this field. The text should be formatted as a list of paragraphs, each paragraph separated by two newlines. Use the markdown syntax for the lists.',
+        'Your detailed and precise report assesses every issue found, if any. Please do NOT provide a corrected JSON output in this field.',
     };
 
     const { output, debugReport } = await this.llmService.generateOutput(

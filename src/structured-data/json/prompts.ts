@@ -68,7 +68,8 @@ You are a highly efficient text processing application.
 Given the original unstructured text, the JSON schema, and the generated JSON output, analyze and identify any discrepancies, errors, or inconsistencies. 
 Specifically, pinpoint the parts in the original text that may have led to incorrect output in the generated JSON. 
 Please provide a list of fields in the generated JSON that need to be corrected, and the corresponding suggestions for corrections.
-If you think the generated JSON is correct, please do not provide any suggestions.
+You also have to provide a readable report, nicely formatted in markdown, that summarize your analysis and provides a clear explanation of your reasoning.
+If you think the generated JSON is correct, please do not provide any suggestions and keep the report short and concise.
 ---------------------
 JSON schema:
 {jsonSchema}
@@ -80,7 +81,7 @@ Generated JSON output:
 {jsonOutput}
 ---------------------
 
-Please output your analysis in the following json format:
+Please output your analysis in the following JSON format:
 
 {outputFormat}
 
