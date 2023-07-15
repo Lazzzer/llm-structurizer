@@ -10,6 +10,10 @@ describe('JsonService', () => {
   let llmService: LLMService;
   let configService: ConfigService;
   let logger: ISOLogger;
+  let model: {
+    apiKey: string;
+    name: string;
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +38,11 @@ describe('JsonService', () => {
     llmService = module.get<LLMService>(LLMService);
     configService = module.get<ConfigService>(ConfigService);
     logger = await module.resolve<ISOLogger>(ISOLogger);
+
+    model = {
+      apiKey: configService.get('OPENAI_API_KEY'),
+      name: 'gpt-3.5-turbo',
+    };
   });
 
   it('should be defined', () => {
@@ -41,112 +50,88 @@ describe('JsonService', () => {
   });
 
   describe('extractWithSchema()', () => {
+    const text = 'This is a text';
+    const schema = '{"title": "string"}';
+
     it('should return a json object', async () => {
-      const text = 'This is a text';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const schema = '{"title": "string"}';
       const { json } = await service.extractWithSchema(model, text, schema);
+
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
-    });
+    }, 30000);
+
     it('should throw an error if the output is not a valid json', async () => {
-      const text = 'This is a text';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const schema = '{"title": "string", "description": "string"';
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
         output: {
-          text: '{"title": "string", "description": "string"',
+          text: '{"title": "string"',
         },
         debugReport: null,
       });
+
       await expect(
         service.extractWithSchema(model, text, schema),
       ).rejects.toThrow(InvalidJsonOutputError);
       expect(logger.warn).toHaveBeenCalled();
     });
   });
+
   describe('extractWithExample()', () => {
+    const text = 'This is a text';
+    const example = {
+      input: 'This is a text',
+      output: '{"title": "This is a text"}',
+    };
+
     it('should return a json object', async () => {
-      const text = 'This is a text';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const example = {
-        input: 'This is a text',
-        output: '{"title": "This is a text"}',
-      };
       const { json } = await service.extractWithExample(model, text, example);
+
       expect(json).toBeDefined();
       expect(json).toHaveProperty('title');
-    });
+    }, 30000);
+
     it('should throw an error if the output is not a valid json', async () => {
-      const text = 'This is a text';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-      const example = {
-        input: 'This is a text',
-        output: '{"title": "string", "description": "string"',
-      };
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
         output: {
-          text: '{"title": "string", "description": "string"',
+          text: '{"title": "This is a text"',
         },
         debugReport: null,
       });
+
       await expect(
         service.extractWithExample(model, text, example),
       ).rejects.toThrow(InvalidJsonOutputError);
       expect(logger.warn).toHaveBeenCalled();
     });
   });
+
   describe('analyzeJsonOutput()', () => {
+    const originalText = 'This is a text';
+    const jsonOutput = {
+      title: 'This is a text',
+    };
+    const schema = '{"title": "string"}';
+
     it('should return an Analysis object', async () => {
-      const originalText = 'This is a text';
-      const jsonOutput = {
-        title: 'This is a title',
-        description: 'This is a text',
-      };
-      const schema = '{"title": "string", "description": "string"}';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
       const { json: analysis } = await service.analyzeJsonOutput(
         model,
         JSON.stringify(jsonOutput),
         originalText,
         schema,
       );
+
       expect(analysis).toBeDefined();
       expect(analysis).toHaveProperty('corrections');
       expect(analysis).toHaveProperty('textAnalysis');
     }, 30000);
+
     it('should throw if the output is not a valid Analysis object', async () => {
-      const originalText = 'This is a text';
-      const jsonOutput = {
-        title: 'This is a title',
-        description: 'This is a text',
-      };
-      const schema = '{"title": "string", "description": "string"}';
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
         output: {
-          text: '{}{analysis}',
+          text: 'bad output',
         },
         debugReport: null,
       });
+
       await expect(
         service.analyzeJsonOutput(
           model,
@@ -158,68 +143,61 @@ describe('JsonService', () => {
       expect(logger.warn).toHaveBeenCalled();
     });
   });
+
   describe('classifyText()', () => {
+    const text = 'This is a text expressing a positive sentiment';
+    const categories = ['positive', 'negative'];
+
     it('should return a Classification object', async () => {
-      const text = 'This is a text expressing a positive sentiment';
-      const categories = ['positive', 'negative'];
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
       const { json: classification } = await service.classifyText(
         model,
         text,
         categories,
       );
+
       expect(classification).toBeDefined();
       expect(classification).toHaveProperty('classification');
       expect(classification).toHaveProperty('confidence');
       expect(classification.classification).toBe('positive');
     }, 30000);
+
     it('should return a Classification object with other as value', async () => {
       const text =
         'This is a text expressing neither a positive sentiment nor a negative one';
-      const categories = ['positive', 'negative'];
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
+
       const { json: classification } = await service.classifyText(
         model,
         text,
         categories,
       );
+
       expect(classification).toBeDefined();
       expect(classification).toHaveProperty('classification');
       expect(classification).toHaveProperty('confidence');
       expect(classification.classification).toBe('other');
     }, 30000);
+
     it('should throw if the output is not a valid Classification object', async () => {
-      const text = 'This is a text expressing a positive sentiment';
-      const categories = ['positive', 'negative'];
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
       jest.spyOn(llmService, 'generateOutput').mockResolvedValue({
         output: {
-          text: '{}{classification}',
+          text: 'bad output',
         },
         debugReport: null,
       });
+
       await expect(
         service.classifyText(model, text, categories),
       ).rejects.toThrow(InvalidJsonOutputError);
       expect(logger.warn).toHaveBeenCalled();
     });
   });
+
   describe('handleGenericPrompt()', () => {
     it('should return an output with the result of the generic prompt', async () => {
       const outputFormat = {
         sentence: 'string',
       };
-
-      const prompt = `You are an helpful assistant. Your only task is to say "Hello World" to the user.
+      const jsonOutputPrompt = `You are an helpful assistant. Your only task is to say "Hello World" to the user.
 
         Please ALWAYS provide your output in the following format as a JSON object:
 
@@ -227,23 +205,23 @@ describe('JsonService', () => {
 
         Your output:
         `;
+      const textOutputPrompt = 'Say "Hello World"';
 
-      const prompt2 = 'Say "Hello World"';
+      const { json: jsonOutput } = await service.handleGenericPrompt(
+        model,
+        jsonOutputPrompt,
+      );
+      const { json: textOutput } = await service.handleGenericPrompt(
+        model,
+        textOutputPrompt,
+      );
 
-      const model = {
-        apiKey: configService.get('OPENAI_API_KEY'),
-        name: 'gpt-3.5-turbo',
-      };
-
-      const { json } = await service.handleGenericPrompt(model, prompt);
-      expect(json).toBeDefined();
-      expect(json).toHaveProperty('output');
-      expect(json.output).toBe('{"sentence":"Hello World"}');
-
-      const { json: json2 } = await service.handleGenericPrompt(model, prompt2);
-      expect(json2).toBeDefined();
-      expect(json2).toHaveProperty('output');
-      expect(json2.output).toBe('Hello World');
+      expect(jsonOutput).toBeDefined();
+      expect(jsonOutput).toHaveProperty('output');
+      expect(jsonOutput.output).toBe('{"sentence":"Hello World"}');
+      expect(textOutput).toBeDefined();
+      expect(textOutput).toHaveProperty('output');
+      expect(textOutput.output).toBe('Hello World');
     }, 30000);
   });
 });
