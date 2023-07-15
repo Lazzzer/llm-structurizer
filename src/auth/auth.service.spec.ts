@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { ApiKey } from '../database/entities/api-key.entity';
+import { ApiKey } from '@prisma/client';
+import { PrismaService } from '@/database/prisma.service';
 
 describe('AuthService', () => {
   let authService: AuthService;
-  const apiKeyRepositoryMock = {
-    findOneBy: jest.mock,
-  };
+  let prismaService: PrismaService;
+
   const apiKeyMock = { id: 'b2edb9e5-8999-4aca-af65-6deacfd1bb9a' } as ApiKey;
 
   beforeEach(async () => {
@@ -15,13 +14,18 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: getRepositoryToken(ApiKey),
-          useValue: apiKeyRepositoryMock,
+          provide: PrismaService,
+          useValue: {
+            apiKey: {
+              findUnique: jest.fn().mockResolvedValue(apiKeyMock),
+            },
+          },
         },
       ],
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
+    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -30,34 +34,34 @@ describe('AuthService', () => {
 
   describe('validateApiKey()', () => {
     it('should return false if the api key is in invalid format', async () => {
-      apiKeyRepositoryMock.findOneBy = jest.fn().mockResolvedValue(null);
+      prismaService.apiKey.findUnique = jest.fn().mockResolvedValue(null);
       const apiKey = 'invalid-api-key-format';
 
       const result = await authService.validateApiKey(apiKey);
 
-      expect(apiKeyRepositoryMock.findOneBy).not.toHaveBeenCalled();
+      expect(prismaService.apiKey.findUnique).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
 
     it('should return false if the api key does not exists', async () => {
-      apiKeyRepositoryMock.findOneBy = jest.fn().mockResolvedValue(null);
+      prismaService.apiKey.findUnique = jest.fn().mockResolvedValue(null);
       const apiKey = 'a2edb9e5-8999-4aca-af65-6deacfd1bb9a';
 
       const result = await authService.validateApiKey(apiKey);
 
-      expect(apiKeyRepositoryMock.findOneBy).toHaveBeenCalledWith({
-        id: apiKey,
+      expect(prismaService.apiKey.findUnique).toHaveBeenCalledWith({
+        where: { id: apiKey },
       });
       expect(result).toBe(false);
     });
 
     it('should return true if the api key exists', async () => {
-      apiKeyRepositoryMock.findOneBy = jest.fn().mockResolvedValue(apiKeyMock);
+      prismaService.apiKey.findUnique = jest.fn().mockResolvedValue(apiKeyMock);
 
       const result = await authService.validateApiKey(apiKeyMock.id);
 
-      expect(apiKeyRepositoryMock.findOneBy).toHaveBeenCalledWith({
-        id: apiKeyMock.id,
+      expect(prismaService.apiKey.findUnique).toHaveBeenCalledWith({
+        where: { id: apiKeyMock.id },
       });
       expect(result).toBe(true);
     });
