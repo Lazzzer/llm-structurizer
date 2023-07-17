@@ -47,7 +47,9 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    customSiteTitle: 'LLM-Structurizer',
+  });
 
   app.useGlobalPipes(new ValidationPipe());
 

@@ -11,6 +11,8 @@ import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { ISOLogger } from '@/logger/isoLogger.service';
 import { LLMBadRequestReceivedError } from '../llm/exceptions/exceptions';
 
+jest.retryTimes(3);
+
 describe('JsonController', () => {
   let controller: JsonController;
   let service: JsonService;

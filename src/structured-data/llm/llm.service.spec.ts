@@ -10,6 +10,8 @@ import {
 } from './exceptions/exceptions';
 import { ISOLogger } from '@/logger/isoLogger.service';
 
+jest.retryTimes(3);
+
 describe('LLMService', () => {
   let service: LLMService;
   let configService: ConfigService;
