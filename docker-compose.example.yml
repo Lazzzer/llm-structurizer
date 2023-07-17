@@ -10,7 +10,9 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
+    networks:
+      - llm-structurizer_network
   app:
     build:
       context: .
@@ -23,9 +25,14 @@ services:
       DATABASE_URL: postgresql://postgres:root@llm-structurizer-db:5432/llm-structurizer?schema=public&connect_timeout=300
       POPPLER_BIN_PATH: /usr/bin
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - db
+    networks:
+      - llm-structurizer_network
 volumes:
   db_data:
     name: llm-structurizer-data
+networks:
+  llm-structurizer_network:
+    name: llm-structurizer_network
