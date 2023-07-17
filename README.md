@@ -4,7 +4,7 @@
 
 # LLM-Structurizer
 
-Ce projet fait parti d'un Travail de Bachelor réalisé à l'[HEIG-VD](https://heig-vd.ch/), dans la filière Informatique et systèmes de communication (ISC) par Lazar Pavicevic et supervisé par le Professeur Marcel Graf.
+Ce projet fait partie d'un Travail de Bachelor réalisé à l'[HEIG-VD](https://heig-vd.ch/), dans la filière Informatique et systèmes de communication (ISC) par Lazar Pavicevic et supervisé par le Professeur Marcel Graf.
 
 Le Travail de Bachelor est également composé d'une application web accessible sur ce repository :
 
@@ -122,16 +122,16 @@ npm run test
 > **Note**  
 > Docker est nécessaire pour cette étape.
 
-L'environnement de production se lance à l'aide de docker compose, dont une template est disponible dans le fichier [docker-compose.example.yml](https://github.com/Lazzzer/llm-structurizer/blob/main/docker-compose.example.yml). Il ne dépend pas de l'installation précédente.
+L'environnement de production se lance à l'aide de docker compose, dont un template est disponible dans le fichier [docker-compose.example.yml](https://github.com/Lazzzer/llm-structurizer/blob/main/docker-compose.example.yml). Il ne dépend pas de l'installation précédente.
 
-Vous pouvez créer un nouveau fichier à partir de la template ou tout simplement lancer directement cette dernière, toutes les variables d'environnement sont déjà configurées correctement.
+Vous pouvez créer un nouveau fichier à partir du template ou tout simplement lancer directement cette dernière, toutes les variables d'environnement sont déjà configurées correctement.
 
 ### Création des images
 
 ```bash
 cd llm-structurizer
 
-# Ajoutez -f docker-compose.example.yml si vous utilisez la template
+# Ajoutez -f docker-compose.example.yml si vous utilisez le template
 docker compose [-f docker-compose.example.yml] build
 ```
 
@@ -162,18 +162,24 @@ docker exec -it llm-structurizer-app npx prisma migrate deploy
 docker exec -it llm-structurizer-app npx prisma db seed
 ```
 
-La base de données reste accessible accessible localement avec les valeurs présentes dans `DATABASE_URL`.
+La base de données reste accessible localement avec les valeurs présentes dans `DATABASE_URL`.
 
-L'API est maintenant disponibles sur les mêmes liens que précedemment :
+L'API est maintenant disponible sur les mêmes liens que précédemment :
 
 - [Interface Swagger](http://localhost:3000/api)
 - [Schéma OpenAPI](http://localhost:3000/api-json)
+
+### Arrêt des images
+
+```bash
+docker compose down
+```
 
 ## Considérations pour la mise en production
 
 Le [Dockerfile](https://github.com/Lazzzer/llm-structurizer/blob/main/Dockerfile) avec ses variables d'environnement suffit pour avoir une API fonctionnelle.
 L'image n'est actuellement pas dans un container registry.
 
-Lors du premier déploiement, il faut s'assurer que la base de données associée ait bien reçu les migrations avec `npx migrate deploy`. La commande peut se lancer depuis un container actif du serveur. Il est également possible de lancer la commande localement depuis la racine du projet, après avoir modifié la variable d'environnement `DATABASE_URL` avec la connection string de la base de données de production.
+Lors du premier déploiement, il faut s'assurer que la base de données associée ait bien reçu les migrations avec `npx prisma migrate deploy`. La commande peut se lancer depuis un container actif du serveur. Il est également possible de lancer la commande localement depuis la racine du projet, après avoir modifié la variable d'environnement `DATABASE_URL` avec la _connection string_ de la base de données de production.
 
 Le déploiement du projet a été testé sur [App Platform](https://www.digitalocean.com/products/app-platform) de Digital Ocean.
