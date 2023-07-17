@@ -38,7 +38,7 @@ La communication avec les LLMs se fait avec la librairie [LangChain](https://js.
 ## Prérequis
 
 - [NodeJS](https://nodejs.org/en/download/) >= version 16
-- [NPM](https://www.npmjs.com/package/download) >= version 8
+- [NPM](https://docs.npmjs.com/getting-started) >= version 8
 - [Poppler-utils](https://poppler.freedesktop.org/) disponible sur Ubuntu/Debian et macOS via Homebrew
 - [PostgreSQL](https://www.postgresql.org/docs/15/index.html) version 15
 - [Docker](https://docs.docker.com/get-started/)
