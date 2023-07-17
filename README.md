@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/llm-structurizer-page.png" width="200" alt="Main Page of Swagger Interface" />
+  <img src="./docs/llm-structurizer-page.png" alt="Main Page of Swagger Interface" />
 </p>
 
 # LLM-Structurizer
