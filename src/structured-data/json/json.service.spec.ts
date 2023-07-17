@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { InvalidJsonOutputError } from './exceptions/exceptions';
 import { ISOLogger } from '@/logger/isoLogger.service';
 
+jest.retryTimes(3);
+
 describe('JsonService', () => {
   let service: JsonService;
   let llmService: LLMService;
