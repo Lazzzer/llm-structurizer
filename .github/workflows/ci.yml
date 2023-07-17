@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+      - '**.yml'
+      - '**.json'
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  install-cache:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18]
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Cache npm dependencies
+        uses: actions/cache@v2
+        id: cache-dependencies
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Install Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          npm install
+  lint-format:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18]
+    needs: install-cache
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Restore npm dependencies
+        uses: actions/cache@v2
+        id: cache-dependencies
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Run lint
+        run: |
+          npm run lint
+      - name: Run prettier
+        run: |
+          npm run format
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: test-llm-structurizer
+        ports:
+          - 5432:5432
+    strategy:
+      matrix:
+        node: [18]
+    needs: install-cache
+    env:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      DATABASE_URL: postgres://postgres:root@localhost:5432/test-llm-structurizer?schema=public&connect_timeout=300
+      POPPLER_BIN_PATH: /usr/bin
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Restore npm dependencies
+        uses: actions/cache@v2
+        id: cache-dependencies
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Install poppler-utils
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: poppler-utils
+          version: 1.0
+      - name: Run test
+        run: |
+          npx prisma db push && npm run test
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18]
+    needs: [lint-format, test]
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Restore npm dependencies
+        uses: actions/cache@v2
+        id: cache-dependencies
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Run build
+        run: |
+          npm run build

@@ -117,6 +117,25 @@ Les liens suivants sont disponibles :
 npm run test
 ```
 
+## CI
+
+La branche `main` est protégée et les pull requests doivent passer l'action `ci` pour être mergées.
+
+![Screenshot CI pipelines](./docs/ci.png)
+
+La CI est gérée avec une Github Action qui sépare le processus en trois étapes.
+
+D'abord, elle effectue une installation des dépendances et une mise en cache pour les prochains runs.
+
+Ensuite, elle lance le linting, le formatage et les tests unitaires en parallèle. Pour les tests, une instance d'une base de données Postgres est créée et `poppler-utils` est installé avec l'action [cache-apt-packages](https://github.com/marketplace/actions/cache-apt-packages).
+
+> **Note**  
+> Pour que les tests passent, il faut que la clé d'API OpenAI soit présente dans les `secrets` du repository.
+
+Finalement, si les étapes précédentes sont validées, elle vérifie le build du projet.
+
+Ce workflow s'inspire fortement de l'excellent article de Maxime Heckel sur le [sujet](https://blog.maximeheckel.com/posts/building-perfect-github-action-frontend-teams/).
+
 ## Environnement de production en local
 
 > **Note**  
