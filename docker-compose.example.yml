@@ -22,7 +22,6 @@ services:
       LOG_LEVEL: 'debug, verbose' # Or 'log, warn, error'
       DATABASE_URL: postgresql://postgres:root@llm-structurizer-db:5432/llm-structurizer?schema=public&connect_timeout=300
       POPPLER_BIN_PATH: /usr/bin
-      OPENAI_API_KEY: #### YOUR OPENAI API KEY HERE ####
     ports:
       - "3000:3000"
     depends_on:
