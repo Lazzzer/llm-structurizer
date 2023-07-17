@@ -85,7 +85,7 @@ POPPLER_BIN_PATH=/usr/bin
 OPENAI_API_KEY=sk-...
 ```
 
-### Initialisation de la base de données [A VERIFIER]
+### Initialisation de la base de données
 
 ```bash
 npx prisma db push
@@ -130,7 +130,9 @@ Vous pouvez créer un nouveau fichier à partir de la template ou tout simplemen
 
 ```bash
 cd llm-structurizer
-docker compose build
+
+# Ajoutez -f docker-compose.example.yml si vous utilisez la template
+docker compose [-f docker-compose.example.yml] build
 ```
 
 L'image du serveur se trouve dans le fichier [Dockerfile](https://github.com/Lazzzer/llm-structurizer/blob/main/Dockerfile), basée sur Debian 10 avec `poppler-utils` d'installé.
@@ -156,8 +158,8 @@ docker compose up app [-d]
 Le serveur de l'API est initialisé, si ce dernier ne tourne pas en fond, ouvrez une nouvelle instance de votre terminal et lancer les commandes suivantes:
 
 ```bash
-docker exec -it llm-structurizer-app npx migrate deploy
-docker exec -it llm-structurizer-app npx db seed
+docker exec -it llm-structurizer-app npx prisma migrate deploy
+docker exec -it llm-structurizer-app npx prisma db seed
 ```
 
 La base de données reste accessible accessible localement avec les valeurs présentes dans `DATABASE_URL`.
