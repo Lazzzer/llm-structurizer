@@ -156,13 +156,13 @@ docker compose [-f docker-compose.example.yml] build
 
 L'image du serveur se trouve dans le fichier [Dockerfile](https://github.com/Lazzzer/llm-structurizer/blob/main/Dockerfile), basée sur Debian 10 avec `poppler-utils` d'installé.
 
-### Lancement des images
+### Lancement des containers
 
 ```bash
 docker compose up
 ```
 
-Il est préférable que la base de données soit initialisée avant de lancer l'image du serveur. Dans ce cas, vous pouvez lancer les commandes suivantes:
+Il est préférable que la base de données soit initialisée avant de lancer le container du serveur. Dans ce cas, vous pouvez lancer les commandes suivantes:
 
 ```bash
 # Lancement de la base de données [en background s'il le faut]
@@ -188,7 +188,7 @@ L'API est maintenant disponible sur les mêmes liens que précédemment :
 - [Interface Swagger](http://localhost:3000/api)
 - [Schéma OpenAPI](http://localhost:3000/api-json)
 
-### Arrêt des images
+### Arrêt des containers
 
 ```bash
 docker compose down
